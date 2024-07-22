@@ -1,0 +1,1005 @@
+---
+title: "SIZE_change"
+author: "Elyza Pilipaityte"
+date: "2024-03-27"
+output: html_document
+---
+
+## clear memory
+```{r}
+rm(list=ls())
+```
+
+Loading packages
+
+```{r}
+library(tidyverse)
+library(car)
+# library(dplyr)
+library(ggplot2)
+library(lme4)
+# install.packages("sjPlot")
+library(sjPlot)
+library(GGally)
+library(DHARMa)
+
+```
+
+
+# Perch 
+
+```{r}
+# uploading datasets
+temp <- read_csv(file = "temp.csv")
+data2023 <- read_csv(file = "lmer2023.csv")
+olddata <- read_csv(file = "perchLmer.csv")
+
+perch23 <- data2023 %>% filter (spp_name_lt=="Eserys")
+
+perch <- rbind(olddata, perch23) %>% drop_na(age) %>% drop_na(total_length)
+
+colSums(is.na(perch))
+
+# Creating new column (year1) by subtracting fish age from the year when it was caught. It will show first fish year - the year the fish was born.
+perch$year1 <- perch$year - perch$age
+
+# Renaming column to year1 in temp dataset in order to combine it with perch data
+names(temp)[names(temp) == "year"] <- "year1"
+
+# Merging perch and temp dataset by year1 - just adding temp column which will show water temperature for first year of fish life
+perch <- merge(perch, temp, by = "year1", all.x = TRUE)
+
+# Creating new column for average temperature during all years of fish life
+average_temp <- numeric(nrow(perch))
+
+for (i in 1:nrow(perch)) {
+  years_subset <- temp$temp[temp$year1 >= perch[i, "year1"] & temp$year1 <= perch[i, "year"]]
+  average_temp[i] <- mean(years_subset, na.rm = TRUE)
+}
+
+perch$average_temp <- average_temp
+
+# perch <- perch %>% drop_na(temp_year1)
+
+# renaming columns to make it more clear
+names(perch)[names(perch) == "temp"] <- "temp_year1"
+names(perch)[names(perch) == "average_temp"] <- "temp_life"
+
+```
+
+Tables to see number of observations and main statiscis
+
+```{r}
+table<- perch %>%
+  group_by(year) %>%
+  summarise(
+    median_length = median(std_length),
+    median_age = median(age), count_observation = n())
+```
+
+Data exploration
+
+```{r}
+colSums(is.na(perch))
+table(perch$age)
+
+perch1 <- perch %>% filter (age < 9 & age > 1) %>% drop_na(season)
+table(perch1$year)
+
+perch1 <- perch1 %>% mutate(yearn = year - 1948)
+table(perch1$yearn)
+
+perch1$fage <- as.factor(perch1$age)
+```
+
+
+1. Outliers in response and independent variables
+
+```{r}
+ggplot(data = perch1) + 
+  geom_point(mapping = aes(x = age, y = total_length, color=as.factor(year)), position = "jitter", size = 2)
+# no outliers
+```
+
+2. Normality and homogeneity of the response variable
+
+```{r}
+# Frequency plots
+par(mfrow = c(1,2), mar = c(4,5,2,3), cex.lab = 1)
+hist(perch1$total_length,  xlab = "Length (cm)",
+     col = "lightblue", border = "black", main = "")
+hist((perch1$age),  xlab = "Age", 
+     col = "red", border = "black",  main = "")
+
+```
+
+3. Balance of categorical variables
+
+```{r}
+table(perch1$season)
+```
+
+4. Multicollinearity among covariates
+
+```{r}
+Coll_b <- c("total_length", "age", "temp_year1", "method", "season")
+# Obtain summary using the ggpairs command from the GGally library
+ggpairs(perch1[ ,Coll_b], ggplot2::aes(alpha = 0.8, colour = season))
+# No obvious collinearity
+
+#Calculate Variance Inflation Factor (VIF)
+round(vif(lm(total_length ~ age + temp_life + method + season,
+                     data = perch1)),2)
+
+```
+
+5. Relationships among response and independent variables
+
+```{r}
+# Interaction? Plot data
+ggplot(perch1, aes(x = age, y = (total_length), color = season)) +
+  geom_point(shape = 16, size = 2, alpha = 0.7, position = "jitter") +
+  geom_smooth(method = 'lm', colour = 'red', se = FALSE, size = 1.5) +
+  xlab("Age") + ylab("Length (cm)") +
+  facet_wrap(~method)
+
+ggplot(perch1, aes(x = temp_life, y = (total_length), color = season)) +
+  geom_point(shape = 16, size = 2, alpha = 0.7, position = "jitter") +
+  geom_smooth(method = 'lm', colour = 'red', se = FALSE, size = 1.5) +
+  xlab("temperature") + ylab("Length (cm)") +
+  facet_wrap(~method)
+```
+
+Finding the best model
+```{r}
+P1 <- lmer(total_length ~ age + temp_life + age * method + (1|season), data = perch1, REML = F)
+P2p <- lmer(total_length ~ age * temp_life + age * method + (1|season), data = perch1, REML = F)
+anova(P1, P2p)
+
+P3 <- lmer(total_length ~ fage + temp_life + fage * method + (1|season), data = perch1, REML = F)
+P4p <- lmer(total_length ~ fage * temp_life + fage * method + (1|season), data = perch1, REML = F)
+anova(P3, P4p)
+```
+
+```{r}
+plot_model(P2p,
+                   type = "pred", 
+                   terms = c("temp_life", "age"),
+                   show.data = TRUE,
+                   pred.type = c("fe"),
+                   title = "",
+                   show.legend = TRUE,
+                   jitter = 0.1,
+                   axis.title = c("Average fish life temperature", "Total length (cm)"),
+                   show.values = FALSE) +
+  theme_bw() +  # Set plot theme to black and white
+  theme(panel.background = element_rect(fill = "white"),  # Set background color to white
+        axis.text = element_text(size = 14),  # Increase size of axis text
+        axis.title = element_text(size = 16),  # Increase size of axis titles
+        panel.grid.major = element_blank(),  # Remove major grid lines
+        panel.grid.minor = element_blank())
+
+```
+
+Using age as factor. Model with different slopes for different age group.
+```{r}
+plot_model(P4p,
+           type = "pred", 
+           terms = c("temp_life", "fage"),
+           show.data = TRUE,
+           pred.type = c("fe"),
+           title = "",
+           show.legend = TRUE,
+           jitter = 0.1,
+           axis.title = c("Average fish life temperature", "Total length (cm)"),
+           show.values = FALSE) +
+  scale_x_continuous(breaks = c(8, 9, 10)) +  # Set custom breaks for the x-axis
+  theme_bw() +  # Set plot theme to black and white
+  theme(panel.background = element_rect(fill = "white"),  # Set background color to white
+        axis.text = element_text(size = 14),  # Increase size of axis text
+        axis.title = element_text(size = 16),  # Increase size of axis titles
+        panel.grid.major = element_blank(),  # Remove major grid lines
+        panel.grid.minor = element_blank())    # Remove minor grid lines
+
+```
+
+
+```{r}
+# Summarise neatly in a table
+tab_model(P2p,
+          show.zeroinf = F,
+             dv.labels = c("Perch"),
+           string.pred = "Coefficient",
+             string.ci = "Conf. Int (95%)",
+              string.p = "P-value",
+               p.style = c("numeric"),
+                emph.p = FALSE,
+             transform = NULL)
+```
+
+The assumptions, for a linear mixed effects model:
+• The explanatory variables are related linearly to the response.
+• The errors have constant variance.
+• The errors are independent.
+• The errors are normally distributed.
+
+
+Residuals
+```{r}
+plot(P2p)
+resid <- residuals(P2p)
+hist(resid, breaks = 30, main = "Histogram of Residuals")
+qqnorm(resid)
+qqline(resid, col = "red")
+
+```
+
+```{r}
+# Influential observations in the model? 
+# Measure using Cook's distance
+par(mfrow = c(1, 1))
+plot(cooks.distance(P2p), 
+     type = "h",
+     xlab = "Observation", 
+     ylab = "Cook's distance",
+     ylim = c(-0.1, 1.2))
+abline(h=1, lty = 2)
+abline(h=0, lty = 2)
+# All below 1 - that is fine
+```
+
+# Bream
+
+```{r}
+# uploading datasets
+temp <- read_csv(file = "temp.csv")
+data2023 <- read_csv(file = "lmer2023.csv")
+olddata <- read_csv(file = "breamLmer.csv")
+
+bream23 <- data2023 %>% filter (spp_name_lt=="Karsis")
+
+bream <- rbind(olddata, bream23) %>% drop_na(age) %>% drop_na(std_length)
+
+colSums(is.na(bream))
+
+# Creating new column (year1) by subtracting fish age from the year when it was caught. It will show first fish year - the year the fish was born.
+bream$year1 <- bream$year - bream$age
+
+# Renaming column to year1 in temp dataset in order to combine it with perch data
+names(temp)[names(temp) == "year"] <- "year1"
+
+# Merging perch and temp dataset by year1 - just adding temp column which will show water temperature for first year of fish life
+bream <- merge(bream, temp, by = "year1", all.x = TRUE)
+
+# Creating new column for average temperature during all years of fish life
+average_temp <- numeric(nrow(bream))
+
+for (i in 1:nrow(bream)) {
+  years_subset <- temp$temp[temp$year1 >= bream[i, "year1"] & temp$year1 <= bream[i, "year"]]
+  average_temp[i] <- mean(years_subset, na.rm = TRUE)
+}
+
+bream$average_temp <- average_temp
+
+# perch <- perch %>% drop_na(temp_year1)
+
+# renaming columns to make it more clear
+names(bream)[names(bream) == "temp"] <- "temp_year1"
+names(bream)[names(bream) == "average_temp"] <- "temp_life"
+```
+
+Tables to see number of observations and main statiscis
+
+```{r}
+table<- bream %>%
+  group_by(year) %>%
+  summarise(
+    median_length = median(std_length),
+    median_age = median(age), count_observation = n())
+```
+
+Data exploration
+
+```{r}
+colSums(is.na(bream))
+table(bream$age)
+
+bream1 <- bream %>% filter (age > 2 & age <= 11 & age != 5) %>% filter (std_length<55) %>% drop_na (season)
+table(bream1$year)
+
+bream1 <- bream1 %>% mutate(yearn = year - 1948)
+table(bream1$method)
+
+bream1$fage <- as.factor(bream1$age)
+```
+
+
+1. Outliers in response and independent variables
+
+```{r}
+ggplot(data = bream1) + 
+  geom_point(mapping = aes(x = age, y = std_length, color=as.factor(year)), position = "jitter", size = 2)
+# no outliers
+```
+
+2. Normality and homogeneity of the response variable
+
+```{r}
+# Frequency plots
+par(mfrow = c(1,2), mar = c(4,5,2,3), cex.lab = 1)
+hist(bream1$std_length,  xlab = "Length (cm)",
+     col = "lightblue", border = "black", main = "")
+hist((bream1$age),  xlab = "Age", 
+     col = "red", border = "black",  main = "")
+
+```
+
+3. Balance of categorical variables
+
+```{r}
+table(bream1$season)
+```
+
+4. Multicollinearity among covariates
+
+```{r}
+Coll_b <- c("std_length", "age", "temp_life", "method", "season")
+# Obtain summary using the ggpairs command from the GGally library
+ggpairs(bream1[ ,Coll_b], ggplot2::aes(alpha = 0.8, colour = season))
+# No obvious collinearity
+
+#Calculate Variance Inflation Factor (VIF)
+round(vif(lm(std_length ~ age + temp_life + method + season,
+                     data = bream1)),2)
+
+```
+
+5. Relationships among response and independent variables
+
+```{r}
+# Interaction? Plot data
+ggplot(bream1, aes(x = age, y = (std_length), color = season)) +
+  geom_point(shape = 16, size = 2, alpha = 0.7, position = "jitter") +
+  geom_smooth(method = 'lm', colour = 'red', se = FALSE, size = 1.5) +
+  xlab("Age") + ylab("Length (cm)") +
+  facet_wrap(~method)
+
+ggplot(bream1, aes(x = temp_life, y = (std_length), color = season)) +
+  geom_point(shape = 16, size = 2, alpha = 0.7, position = "jitter") +
+  geom_smooth(method = 'lm', colour = 'red', se = FALSE, size = 1.5) +
+  xlab("temperature1") + ylab("Length (cm)") +
+  facet_wrap(~method)
+```
+
+Finding the best model
+```{r}
+
+P1 <- lmer(std_length ~ age + temp_life +  age * method + (1|season), data = bream1, REML = F)
+P2b <- lmer(std_length ~ age * temp_life +  age * method + (1|season), data = bream1, REML = F)
+anova(P1, P2b)
+
+P3 <- lmer(std_length ~ fage + temp_life +  fage * method + (1|season), data = bream1, REML = F)
+P4b <- lmer(std_length ~ fage * temp_life +  fage * method + (1|season), data = bream1, REML = F)
+anova(P3, P4b)
+```
+
+```{r}
+plot_model(P2b, type = "pred", 
+                   terms = c("temp_life", "age"),
+                   show.data = TRUE,
+                   pred.type = c("fe"),
+                   title = "",
+                   show.legend = TRUE,
+                   jitter = 0.1,
+                   axis.title = c("Average fish life temperature", "Standard length (cm)"),
+                   show.values = FALSE) +
+   ylim(0, NA) +
+  theme_bw() +  # Set plot theme to black and white
+  theme(panel.background = element_rect(fill = "white"),  # Set background color to white
+        axis.text = element_text(size = 14),  # Increase size of axis text
+        axis.title = element_text(size = 16),  # Increase size of axis titles
+        panel.grid.major = element_blank(),  # Remove major grid lines
+        panel.grid.minor = element_blank())  # Remove minor grid lines
+
+```
+
+Using age as factor. Model with different slopes for different age group.
+```{r}
+plot_model(P4b,
+                   type = "pred", 
+                   terms = c("temp_life", "fage"),
+                   show.data = TRUE,
+                   pred.type = c("fe"),
+                   title = "",
+                   show.legend = TRUE,
+                   jitter = 0.1,
+                   axis.title = c("Average fish life temperature", "Standard length (cm)"),
+                   show.values = FALSE) +
+  theme_bw() +  # Set plot theme to black and white
+  theme(panel.background = element_rect(fill = "white"),  # Set background color to white
+        axis.text = element_text(size = 14),  # Increase size of axis text
+        axis.title = element_text(size = 16),  # Increase size of axis titles
+        panel.grid.major = element_blank(),  # Remove major grid lines
+        panel.grid.minor = element_blank())  # Remove minor grid lines
+
+```
+
+```{r}
+# Summarise neatly in a table
+tab_model(P2b,
+          show.zeroinf = F,
+             dv.labels = c("Bream"),
+           string.pred = "Coefficient",
+             string.ci = "Conf. Int (95%)",
+              string.p = "P-value",
+               p.style = c("numeric"),
+                emph.p = FALSE,
+             transform = NULL)
+```
+
+
+Residuals
+```{r}
+plot(P2b)
+resid <- residuals(P2b)
+hist(resid, breaks = 30, main = "Histogram of Residuals")
+qqnorm(resid)
+qqline(resid, col = "red")
+
+```
+
+```{r}
+# Influential observations in the model? 
+# Measure using Cook's distance
+par(mfrow = c(1, 1))
+plot(cooks.distance(P2b), 
+     type = "h",
+     xlab = "Observation", 
+     ylab = "Cook's distance",
+     ylim = c(-0.1, 1.2))
+abline(h=1, lty = 2)
+abline(h=0, lty = 2)
+# Not good
+```
+
+
+# Roach
+
+```{r}
+# uploading datasets
+temp <- read_csv(file = "temp.csv")
+data2023 <- read_csv(file = "lmer2023.csv")
+olddata <- read_csv(file = "roachLmer.csv")
+
+roach23 <- data2023 %>% filter (spp_name_lt=="Kuoja")
+
+roach <- rbind(olddata, roach23) %>% drop_na(age) %>% drop_na(std_length)
+
+colSums(is.na(roach))
+
+# Creating new column (year1) by subtracting fish age from the year when it was caught. It will show first fish year - the year the fish was born.
+roach$year1 <- roach$year - roach$age
+
+# Renaming column to year1 in temp dataset in order to combine it with perch data
+names(temp)[names(temp) == "year"] <- "year1"
+
+# Merging perch and temp dataset by year1 - just adding temp column which will show water temperature for first year of fish life
+roach <- merge(roach, temp, by = "year1", all.x = TRUE)
+
+# Creating new column for average temperature during all years of fish life
+average_temp <- numeric(nrow(roach))
+
+for (i in 1:nrow(roach)) {
+  years_subset <- temp$temp[temp$year1 >= roach[i, "year1"] & temp$year1 <= roach[i, "year"]]
+  average_temp[i] <- mean(years_subset, na.rm = TRUE)
+}
+
+roach$average_temp <- average_temp
+
+# perch <- perch %>% drop_na(temp_year1)
+
+# renaming columns to make it more clear
+names(roach)[names(roach) == "temp"] <- "temp_year1"
+names(roach)[names(roach) == "average_temp"] <- "temp_life"
+```
+
+Tables to see number of observations and main statiscis
+
+```{r}
+table <- roach %>%
+  group_by(year) %>%
+  summarise(
+    median_length = median(std_length),
+    median_age = median(age), count_observation = n())
+```
+
+Data exploration
+
+```{r}
+colSums(is.na(roach))
+table(roach$age)
+
+roach1 <- roach %>% filter (age > 2 & age <= 11) %>% drop_na(season)
+table(roach1$year)
+
+roach1 <- roach1 %>% mutate(yearn = year - 1949) %>% filter(std_length<55)
+table(roach1$yearn)
+
+roach1$fage <- as.factor(roach1$age)
+```
+
+1. Outliers in response and independent variables
+
+```{r}
+ggplot(data = roach1) + 
+  geom_point(mapping = aes(x = age, y = std_length, color=as.factor(year)), position = "jitter", size = 2)
+# no obvious outliers
+```
+
+2. Normality and homogeneity of the response variable
+
+```{r}
+# Frequency plots
+par(mfrow = c(1,2), mar = c(4,5,2,3), cex.lab = 1)
+hist(roach1$std_length,  xlab = "Length (cm)",
+     col = "lightblue", border = "black", main = "")
+hist((roach1$age),  xlab = "Age", 
+     col = "red", border = "black",  main = "")
+
+```
+
+3. Balance of categorical variables
+
+```{r}
+table(roach1$season)
+```
+
+4. Multicollinearity among covariates
+
+```{r}
+Coll_b <- c("std_length", "age", "temp_life", "method", "season")
+# Obtain summary using the ggpairs command from the GGally library
+ggpairs(roach1[ ,Coll_b], ggplot2::aes(alpha = 0.8, colour = season))
+# No obvious collinearity
+
+#Calculate Variance Inflation Factor (VIF)
+round(vif(lm(std_length ~ age + temp_life + method + season,
+                     data = roach1)),2)
+
+```
+
+5. Relationships among response and independent variables
+
+```{r}
+# Interaction? Plot data
+ggplot(roach1, aes(x = age, y = (std_length), color = season)) +
+  geom_point(shape = 16, size = 2, alpha = 0.7, position = "jitter") +
+  geom_smooth(method = 'lm', colour = 'red', se = FALSE, size = 1.5) +
+  xlab("Age") + ylab("Length (cm)") +
+  facet_wrap(~method)
+
+ggplot(roach1, aes(x = temp_year1, y = (std_length), color = season)) +
+  geom_point(shape = 16, size = 2, alpha = 0.7, position = "jitter") +
+  geom_smooth(method = 'lm', colour = 'red', se = FALSE, size = 1.5) +
+  xlab("temperature1") + ylab("Length (cm)") +
+  facet_wrap(~method)
+```
+
+Finding the best model
+```{r}
+
+P1 <- lmer(std_length ~ age + temp_life + age * method  + (1|season), data = roach1, REML = F)
+P2r <- lmer(std_length ~ age * temp_life + age * method + (1|season), data = roach1, REML = F)
+anova(P1, P2r)
+
+P3 <- lmer(std_length ~ fage + temp_life + fage * method  + (1|season), data = roach1, REML = F)
+P4r <- lmer(std_length ~ fage * temp_life + fage * method + (1|season), data = roach1, REML = F)
+anova(P3, P4r)
+```
+
+
+```{r}
+plot_model(P2r,
+                   type = "pred", 
+                   terms = c("temp_life", "age"),
+                   show.data = TRUE,
+                   pred.type = c("fe"),
+                   title = "",
+                   show.legend = TRUE,
+                   jitter = 0.1,
+                   axis.title = c("Average fish life temperature", "Standard length (cm)"),
+                   show.values = FALSE) +
+     ylim(0, NA) +
+  theme_bw() +  # Set plot theme to black and white
+  theme(panel.background = element_rect(fill = "white"),  # Set background color to white
+        axis.text = element_text(size = 14),  # Increase size of axis text
+        axis.title = element_text(size = 16),  # Increase size of axis titles
+        panel.grid.major = element_blank(),  # Remove major grid lines
+        panel.grid.minor = element_blank())  # Remove minor grid lines
+
+```
+
+```{r}
+plot_model(P4r,
+                   type = "pred", 
+                   terms = c("temp_life", "fage"),
+                   show.data = TRUE,
+                   pred.type = c("fe"),
+                   title = "",
+                   show.legend = TRUE,
+                   jitter = 0.1,
+                   axis.title = c("Average fish life temperature", "Standard length (cm)"),
+                   show.values = FALSE) +
+  theme_bw() +  # Set plot theme to black and white
+  theme(panel.background = element_rect(fill = "white"),  # Set background color to white
+        axis.text = element_text(size = 14),  # Increase size of axis text
+        axis.title = element_text(size = 16),  # Increase size of axis titles
+        panel.grid.major = element_blank(),  # Remove major grid lines
+        panel.grid.minor = element_blank())  # Remove minor grid lines
+
+```
+
+```{r}
+# Summarise neatly in a table
+tab_model(P2r,
+          show.zeroinf = F,
+             dv.labels = c("Roach"),
+           string.pred = "Coefficient",
+             string.ci = "Conf. Int (95%)",
+              string.p = "P-value",
+               p.style = c("numeric"),
+                emph.p = FALSE,
+             transform = NULL)
+```
+
+
+Residuals
+```{r}
+
+plot(P2r)
+resid <- residuals(P2r)
+hist(resid, breaks = 30, main = "Histogram of Residuals")
+qqnorm(resid)
+qqline(resid, col = "red")
+
+```
+
+```{r}
+# Influential observations in the model? 
+# Measure using Cook's distance
+par(mfrow = c(1, 1))
+plot(cooks.distance(P2r), 
+     type = "h",
+     xlab = "Observation", 
+     ylab = "Cook's distance",
+     ylim = c(-0.1, 1.2))
+abline(h=1, lty = 2)
+abline(h=0, lty = 2)
+# All below 1 - that is fine
+```
+
+
+# Pikeperch
+
+```{r}
+# uploading datasets
+temp <- read_csv(file = "temp.csv")
+data2023 <- read_csv(file = "lmer2023.csv")
+olddata <- read_csv(file = "sanderLmer.csv")
+
+sander23 <- data2023 %>% filter (spp_name_lt=="Starkis")
+
+sander <- rbind(olddata, sander23) %>% drop_na(age) %>% drop_na(std_length)
+
+colSums(is.na(sander))
+
+# Creating new column (year1) by subtracting fish age from the year when it was caught. It will show first fish year - the year the fish was born.
+sander$year1 <- sander$year - sander$age
+
+# Renaming column to year1 in temp dataset in order to combine it with perch data
+names(temp)[names(temp) == "year"] <- "year1"
+
+# Merging perch and temp dataset by year1 - just adding temp column which will show water temperature for first year of fish life
+sander <- merge(sander, temp, by = "year1", all.x = TRUE)
+
+# Creating new column for average temperature during all years of fish life
+average_temp <- numeric(nrow(sander))
+
+for (i in 1:nrow(sander)) {
+  years_subset <- temp$temp[temp$year1 >= sander[i, "year1"] & temp$year1 <= sander[i, "year"]]
+  average_temp[i] <- mean(years_subset, na.rm = TRUE)
+}
+
+sander$average_temp <- average_temp
+
+# renaming columns to make it more clear
+names(sander)[names(sander) == "temp"] <- "temp_year1"
+names(sander)[names(sander) == "average_temp"] <- "temp_life"
+```
+
+Tables to see number of observations and main statiscis
+
+```{r}
+table<- sander %>%
+  group_by(year) %>%
+  summarise(
+    median_length = median(std_length),
+    median_age = median(age), count_observation = n())
+```
+
+Data exploration
+
+```{r}
+table(sander$age)
+
+sander1 <- sander %>% filter (age <= 5) %>% drop_na(season)
+table(sander1$year)
+
+colSums(is.na(sander1))
+
+sander1$fage <- as.factor(sander1$age)
+```
+
+1. Outliers in response and independent variables
+
+```{r}
+ggplot(data = sander1) + 
+  geom_point(mapping = aes(x = age, y = std_length, color=as.factor(year)), position = "jitter", size = 2)
+
+```
+
+2. Normality and homogeneity of the response variable
+
+```{r}
+# Frequency plots
+par(mfrow = c(1,2), mar = c(4,5,2,3), cex.lab = 1)
+hist(sander1$std_length,  xlab = "Length (cm)",
+     col = "lightblue", border = "black", main = "")
+hist((sander1$age),  xlab = "Age", 
+     col = "red", border = "black",  main = "")
+
+# Data looks normally distributed
+```
+
+3. Balance of categorical variables
+
+```{r}
+table(sander1$season)
+```
+
+4. Multicollinearity among covariates
+
+```{r}
+Coll_b <- c("std_length", "age", "temp_life", "method", "season")
+# Obtain summary using the ggpairs command from the GGally library
+ggpairs(sander1[ ,Coll_b], ggplot2::aes(alpha = 0.8, colour = season))
+# No obvious collinearity
+
+#Calculate Variance Inflation Factor (VIF)
+round(vif(lm(std_length ~ age + temp_life + method + season,
+                     data = sander1)),2)
+
+```
+
+5. Relationships among response and independent variables
+
+```{r}
+# Interaction? Plot data
+ggplot(sander1, aes(x = age, y = (std_length), color = season)) +
+  geom_point(shape = 16, size = 2, alpha = 0.7, position = "jitter") +
+  geom_smooth(method = 'lm', colour = 'red', se = FALSE, size = 1.5) +
+  xlab("Age") + ylab("Length (cm)") +
+  facet_wrap(~method)
+
+ggplot(sander1, aes(x = temp_life, y = (std_length), color = season)) +
+  geom_point(shape = 16, size = 2, alpha = 0.7, position = "jitter") +
+  geom_smooth(method = 'lm', colour = 'red', se = FALSE, size = 1.5) +
+  xlab("temperature1") + ylab("Length (cm)") +
+  facet_wrap(~method)
+```
+
+
+Finding the best model
+```{r}
+
+P1 <- lmer(std_length ~ age + temp_life + age * method  + (1|season), data = sander1, REML = F)
+P2s <- lmer(std_length ~ age * temp_life + age * method + (1|season), data = sander1, REML = F)
+anova(P1, P2s)
+
+P3 <- lmer(std_length ~ fage + temp_life + fage * method  + (1|season), data = sander1, REML = F)
+P4s <- lmer(std_length ~ fage * temp_life + fage * method + (1|season), data = sander1, REML = F)
+anova(P3, P4s)
+
+```
+
+```{r}
+plot_model(P2s,
+                   type = "pred", 
+                   terms = c("temp_life", "age"),
+                   show.data = TRUE,
+                   pred.type = c("fe"),
+                   title = "",
+                   show.legend = TRUE,
+                   jitter = 0.1,
+                   axis.title = c("Average fish life temperature", "Standard length (cm)"),
+                   show.values = FALSE) +
+  theme_bw() +  # Set plot theme to black and white
+  theme(panel.background = element_rect(fill = "white"),  # Set background color to white
+        axis.text = element_text(size = 14),  # Increase size of axis text
+        axis.title = element_text(size = 16),  # Increase size of axis titles
+        panel.grid.major = element_blank(),  # Remove major grid lines
+        panel.grid.minor = element_blank())  # Remove minor grid lines
+
+```
+
+```{r}
+# Summarise neatly in a table
+tab_model(P2s,
+          show.zeroinf = F,
+             dv.labels = c("Pikeperch"),
+           string.pred = "Coefficient",
+             string.ci = "Conf. Int (95%)",
+              string.p = "P-value",
+               p.style = c("numeric"),
+                emph.p = FALSE,
+             transform = NULL)
+```
+
+Using age as factor. Model with different slopes for different age group.
+```{r}
+plot_model(P4s,
+                   type = "pred", 
+                   terms = c("temp_life", "fage"),
+                   show.data = TRUE,
+                   pred.type = c("fe"),
+                   title = "",
+                   show.legend = TRUE,
+                   jitter = 0.1,
+                   axis.title = c("Average fish life temperature", "Standard length (cm)"),
+                   show.values = FALSE) +
+  theme_bw() +  # Set plot theme to black and white
+  theme(panel.background = element_rect(fill = "white"),  # Set background color to white
+        axis.text = element_text(size = 14),  # Increase size of axis text
+        axis.title = element_text(size = 16),  # Increase size of axis titles
+        panel.grid.major = element_blank(),  # Remove major grid lines
+        panel.grid.minor = element_blank())  # Remove minor grid lines
+
+```
+
+
+Residuals
+```{r}
+plot(P2s)
+resid <- residuals(P2s)
+hist(resid, breaks = 30, main = "Histogram of Residuals")
+qqnorm(resid)
+qqline(resid, col = "red")
+
+```
+
+```{r}
+# Influential observations in the model? 
+# Measure using Cook's distance
+par(mfrow = c(1, 1))
+plot(cooks.distance(P2s), 
+     type = "h",
+     xlab = "Observation", 
+     ylab = "Cook's distance",
+     ylim = c(-0.1, 1.2))
+abline(h=1, lty = 2)
+abline(h=0, lty = 2)
+# All below 1 - that is fine
+```
+
+
+# One plot
+
+```{r}
+library(cowplot)
+
+# Function to create a plot for a given model
+create_plot <- function(model, species_name, show_x_axis_text = TRUE) {
+  plot <- plot_model(model, type = "pred", terms = c("temp_life", "age"), show.data = TRUE, pred.type = "fe") +
+    labs(x = NULL, y = NULL) +  # Remove x and y axis labels from individual plots
+    ggtitle(species_name) +
+    theme_bw() +
+    theme(
+      panel.background = element_rect(fill = "white"),
+      axis.text = element_text(size = 14),
+      axis.title = element_text(size = 16),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      plot.title = element_text(size = 18, hjust = 0.5),
+      legend.text = element_text(size = 12),  
+      legend.title = element_text(size = 13)
+    )
+
+  # Conditionally remove x-axis text
+  if (!show_x_axis_text) {
+    plot <- plot + theme(axis.text.x = element_blank())
+  }
+  
+  return(plot)
+}
+
+# Species names
+species_names <- c("Bream", "Roach", "Perch", "Pikeperch")
+
+# Create individual plots with species names
+plot1 <- create_plot(P2b, species_names[1], show_x_axis_text = FALSE)
+plot2 <- create_plot(P2r, species_names[2], show_x_axis_text = FALSE)
+plot3 <- create_plot(P2p, species_names[3], show_x_axis_text = TRUE)
+plot4 <- create_plot(P2s, species_names[4], show_x_axis_text = TRUE)
+
+# Combine plots using cowplot
+combined_plot <- plot_grid(
+  plot1, plot2, plot3, plot4, 
+  label_size = 16, 
+  ncol = 2
+)
+
+# Adjust the positions of the labels to avoid overlap
+final_plot <- ggdraw() +
+  draw_plot(combined_plot, 0.02, 0.05, 1, 0.95) +  # Shift the combined plot up
+  draw_label("Length (cm)", x = -0.01, angle = 90, vjust = 1, hjust = 0.5, size = 16) +
+  draw_label("Average fish life temperature (C°)", y = -0.02, vjust = -1, hjust = 0.5, size = 16) + theme(plot.margin = margin(15, 15, 15, 15))
+
+print(final_plot)
+
+```
+
+
+One plot with the same x-axis range and labels for all subplots, starting from 0 on the y-axis.?? 
+```{r}
+library(cowplot)
+
+# Function to create a plot for a given model
+create_plot <- function(model, species_name, show_x_axis_text = TRUE) {
+  plot <- plot_model(model, type = "pred", terms = c("temp_life", "age"), show.data = TRUE, pred.type = "fe") +
+    ylim(0, NA) +
+    scale_x_continuous(limits = c(8, 10), breaks = c(8, 9, 10)) + 
+    labs(x = NULL, y = NULL) +  # Remove x and y axis labels from individual plots
+    ggtitle(species_name) +
+    theme_bw() +
+    theme(
+      panel.background = element_rect(fill = "white"),
+      axis.text = element_text(size = 14),
+      axis.title = element_text(size = 16),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      plot.title = element_text(size = 18, hjust = 0.5)
+    )
+
+  # Conditionally remove x-axis text
+  if (!show_x_axis_text) {
+    plot <- plot + theme(axis.text.x = element_blank())
+  }
+  
+  return(plot)
+}
+
+# Species names
+species_names <- c("Bream", "Roach", "Perch", "Pikeperch")
+
+# Create individual plots with species names
+plot1 <- create_plot(P2b, species_names[1], show_x_axis_text = FALSE)
+plot2 <- create_plot(P2r, species_names[2], show_x_axis_text = FALSE)
+plot3 <- create_plot(P2p, species_names[3], show_x_axis_text = TRUE)
+plot4 <- create_plot(P2s, species_names[4], show_x_axis_text = TRUE)
+
+# Combine plots using cowplot
+combined_plot <- plot_grid(
+  plot1, plot2, plot3, plot4, 
+  label_size = 16, 
+  ncol = 2
+)
+
+# Adjust the positions of the labels to avoid overlap
+final_plot <- ggdraw() +
+  draw_plot(combined_plot, 0.02, 0.05, 1, 0.95) +  # Shift the combined plot up
+  draw_label("Length (cm)", x = -0.01, angle = 90, vjust = 1, hjust = 0.5, size = 16) +
+  draw_label("Average fish life temperature (C°)", y = -0.02, vjust = -1, hjust = 0.5, size = 16) + theme(plot.margin = margin(15, 15, 15, 15))
+
+print(final_plot)
+
+```

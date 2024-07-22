@@ -1,0 +1,1652 @@
+---
+title: "matSize_every_year"
+author: "Elyza Pilipaityte"
+date: "2024-01-24"
+output: html_document
+---
+
+## clear memory
+```{r}
+rm(list=ls())
+```
+
+### Loading packages
+
+```{r, include=FALSE, eval = T, echo = F, message = F, warning = F}
+
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(sjPlot)
+library(dplyr)
+library(cowplot)
+library(Kendall)
+library(EnvStats)
+```
+
+### Loading data
+
+```{r}
+L50data <- read_csv(file = "L50data.csv")
+
+# function for Counting the length at which 50% of the fish are mature
+lrPerc <- function(cf,p) (log(p/(1-p))-cf[[1]])/cf[[2]]
+
+My_theme <- theme(
+  panel.background = element_blank(),
+  panel.border = element_rect(fill = NA, linewidth = 1.25),
+  strip.background = element_rect(fill = "white", color = "white", linewidth = 1.25),
+  text = element_text(size = 16, family = "gillsans"),
+  panel.grid.major = element_blank(),  # Remove major grid lines
+  panel.grid.minor = element_blank()   # Remove minor grid lines
+)
+```
+
+
+#### Bream
+
+```{r}
+Bream1 <- L50data %>% filter (spp_name_lt=="Karsis") %>% select(spp_name_lt, total_length, gonad_stage, year, month, sex_en) %>% filter(month == 6 | month == 7 | month == 8)
+
+# Adding gonad stage 1 to smallest individuals which total length less than 20 and which has no gonad stage data.
+Bream1 <- Bream1 %>% mutate(gonad_stage = ifelse(is.na(gonad_stage) & total_length < 10, "1", gonad_stage), gonad_stage = ifelse(gonad_stage == "2" & total_length > 50, NA, gonad_stage)) %>% drop_na(gonad_stage) %>% drop_na(total_length)
+
+ggplot(Bream1, aes(gonad_stage, total_length, color = as.factor(year))) +
+  geom_point(size = 3, position = "jitter", alpha = 1/2)
+table(Bream1$year)
+table(Bream1$gonad_stage)
+```
+
+Removing outliers
+```{r}
+# Create box plot to see outliers
+boxplot(Bream1$total_length ~ Bream1$gonad_stage, xlab = "Gonad stage", ylab = "Length (cm)")
+
+```
+
+All different years
+
+```{r}
+
+# Calculate the number of observations per year in zander
+year_counts_Bream1 <- Bream1 %>%
+  group_by(year) %>%
+  summarise(n = n())
+
+# Filter the zander dataset to include only years with more than 15 observations
+Bream1 <- Bream1 %>%
+  inner_join(year_counts_Bream1, by = "year") %>%
+  filter(n > 10) %>%
+  select(-n)
+
+# Find unique years in the zander dataset
+unique_years <- unique(Bream1$year)
+
+# Create an empty dataframe to store the fictitious individuals
+new_individuals <- data.frame()
+
+# Loop through each unique year
+for (year in unique_years) {
+  # Generate 30 fictitious individuals for the current year
+  new_data <- data.frame(
+    spp_name_lt = rep("Karsis", 30),
+    total_length = runif(30, min = 1, max = 15),
+    gonad_stage = rep("1", 30),
+    year = rep(year, 30),
+    month = rep(7, 30),
+    sex_en = rep(NA, 30)
+  )
+  
+  # Append the new data to the new_individuals dataframe
+  new_individuals <- rbind(new_individuals, new_data)
+}
+
+# Combine the new individuals with the original zander dataset
+Bream1 <- rbind(Bream1, new_individuals)
+
+# Creating new column with binomial maturity data (0 - Immature, 1 - Mature)
+Bream1 <- Bream1 %>%
+  mutate(maturity = as.factor(ifelse(gonad_stage < 3, 0, 1)))
+
+Bream1 <- Bream1 |>
+  drop_na(year) |>
+  mutate(year = factor(year, levels = sort(unique(year))))
+
+glm3 <- glm(maturity ~ total_length * year, data = Bream1, family=binomial)
+
+car::Anova(glm3)
+coef(glm3)
+summary(glm3)
+bcL3 <- car::Boot(glm3)
+
+L50.50s = apply(bcL3$t[,1:2], 1, lrPerc, p = 0.5)
+L50.51s = apply(bcL3$t[,1:2] + bcL3$t[,c(3, 32)], 1, lrPerc, p = 0.5)
+L50.57s = apply(bcL3$t[,1:2] + bcL3$t[,c(4, 33)], 1, lrPerc, p = 0.5)
+L50.58s = apply(bcL3$t[,1:2] + bcL3$t[,c(5, 34)], 1, lrPerc, p = 0.5)
+L50.59s = apply(bcL3$t[,1:2] + bcL3$t[,c(6, 35)], 1, lrPerc, p = 0.5)
+L50.60s = apply(bcL3$t[,1:2] + bcL3$t[,c(7, 36)], 1, lrPerc, p = 0.5)
+L50.62s = apply(bcL3$t[,1:2] + bcL3$t[,c(8, 37)], 1, lrPerc, p = 0.5)
+L50.66s = apply(bcL3$t[,1:2] + bcL3$t[,c(9, 38)], 1, lrPerc, p = 0.5)
+L50.67s = apply(bcL3$t[,1:2] + bcL3$t[,c(10, 39)], 1, lrPerc, p = 0.5)
+L50.68s = apply(bcL3$t[,1:2] + bcL3$t[,c(11, 40)], 1, lrPerc, p = 0.5)
+L50.73s = apply(bcL3$t[,1:2] + bcL3$t[,c(12, 41)], 1, lrPerc, p = 0.5)
+L50.74s = apply(bcL3$t[,1:2] + bcL3$t[,c(13, 42)], 1, lrPerc, p = 0.5)
+L50.75s = apply(bcL3$t[,1:2] + bcL3$t[,c(14, 43)], 1, lrPerc, p = 0.5)
+L50.76s = apply(bcL3$t[,1:2] + bcL3$t[,c(15, 44)], 1, lrPerc, p = 0.5)
+L50.77s = apply(bcL3$t[,1:2] + bcL3$t[,c(16, 45)], 1, lrPerc, p = 0.5)
+L50.78s = apply(bcL3$t[,1:2] + bcL3$t[,c(17, 46)], 1, lrPerc, p = 0.5)
+L50.79s = apply(bcL3$t[,1:2] + bcL3$t[,c(18, 47)], 1, lrPerc, p = 0.5)
+L50.84s = apply(bcL3$t[,1:2] + bcL3$t[,c(19, 48)], 1, lrPerc, p = 0.5)
+L50.87s = apply(bcL3$t[,1:2] + bcL3$t[,c(20, 49)], 1, lrPerc, p = 0.5)
+L50.88s = apply(bcL3$t[,1:2] + bcL3$t[,c(21, 50)], 1, lrPerc, p = 0.5)
+L50.89s = apply(bcL3$t[,1:2] + bcL3$t[,c(22, 51)], 1, lrPerc, p = 0.5)
+L50.90s = apply(bcL3$t[,1:2] + bcL3$t[,c(23, 52)], 1, lrPerc, p = 0.5)
+L50.91s = apply(bcL3$t[,1:2] + bcL3$t[,c(24, 53)], 1, lrPerc, p = 0.5)
+L50.92s = apply(bcL3$t[,1:2] + bcL3$t[,c(25, 54)], 1, lrPerc, p = 0.5)
+L50.93s = apply(bcL3$t[,1:2] + bcL3$t[,c(26, 55)], 1, lrPerc, p = 0.5)
+L50.95s = apply(bcL3$t[,1:2] + bcL3$t[,c(27, 56)], 1, lrPerc, p = 0.5)
+L50.98s = apply(bcL3$t[,1:2] + bcL3$t[,c(28, 57)], 1, lrPerc, p = 0.5)
+L50.99s = apply(bcL3$t[,1:2] + bcL3$t[,c(29, 58)], 1, lrPerc, p = 0.5)
+L50.04s = apply(bcL3$t[,1:2] + bcL3$t[,c(30, 59)], 1, lrPerc, p = 0.5)
+L50.06s = apply(bcL3$t[,1:2] + bcL3$t[,c(31, 60)], 1, lrPerc, p = 0.5)
+
+( ci.L50.50s <-  quantile(L50.50s,c(0.025,0.975)) )
+( ci.L50.51s <-  quantile(L50.51s,c(0.025,0.975)) )
+( ci.L50.57s <-  quantile(L50.57s,c(0.025,0.975)) )
+( ci.L50.58s <-  quantile(L50.58s,c(0.025,0.975)) )
+( ci.L50.59s <-  quantile(L50.59s,c(0.025,0.975)) )
+( ci.L50.60s <-  quantile(L50.60s,c(0.025,0.975)) )
+( ci.L50.62s <-  quantile(L50.62s,c(0.025,0.975)) )
+( ci.L50.66s <-  quantile(L50.66s,c(0.025,0.975)) )
+( ci.L50.67s <-  quantile(L50.67s,c(0.025,0.975)) )
+( ci.L50.68s <-  quantile(L50.68s,c(0.025,0.975)) )
+( ci.L50.73s <-  quantile(L50.73s,c(0.025,0.975)) )
+( ci.L50.74s <-  quantile(L50.74s,c(0.025,0.975)) )
+( ci.L50.75s <-  quantile(L50.75s,c(0.025,0.975)) )
+( ci.L50.76s <-  quantile(L50.76s,c(0.025,0.975)) )
+( ci.L50.77s <-  quantile(L50.77s,c(0.025,0.975)) )
+( ci.L50.78s <-  quantile(L50.78s,c(0.025,0.975)) )
+( ci.L50.79s <-  quantile(L50.79s,c(0.025,0.975)) )
+( ci.L50.84s <-  quantile(L50.84s,c(0.025,0.975)) )
+( ci.L50.87s <-  quantile(L50.87s,c(0.025,0.975)) )
+( ci.L50.88s <-  quantile(L50.88s,c(0.025,0.975)) )
+( ci.L50.89s <-  quantile(L50.89s,c(0.025,0.975)) )
+( ci.L50.90s <-  quantile(L50.90s,c(0.025,0.975)) )
+( ci.L50.91s <-  quantile(L50.91s,c(0.025,0.975)) )
+( ci.L50.92s <-  quantile(L50.92s,c(0.025,0.975)) )
+( ci.L50.93s <-  quantile(L50.93s,c(0.025,0.975)) )
+( ci.L50.95s <-  quantile(L50.95s,c(0.025,0.975)) )
+( ci.L50.98s <-  quantile(L50.98s,c(0.025,0.975)) )
+( ci.L50.99s <-  quantile(L50.99s,c(0.025,0.975)) )
+( ci.L50.04s <-  quantile(L50.04s,c(0.025,0.975)) )
+( ci.L50.06s <-  quantile(L50.06s,c(0.025,0.975)) )
+
+# Maturity size -α/βi
+predicted_L50.50s <- -(coef(glm3)[1] / coef(glm3)[2])
+predicted_L50.51s <- -((coef(glm3)[1] + coef(glm3)[3]) / (coef(glm3)[2] + coef(glm3)[32]))
+predicted_L50.57s <- -((coef(glm3)[1] + coef(glm3)[4]) / (coef(glm3)[2] + coef(glm3)[33]))
+predicted_L50.58s <- -((coef(glm3)[1] + coef(glm3)[5]) / (coef(glm3)[2] + coef(glm3)[34]))
+predicted_L50.59s <- -((coef(glm3)[1] + coef(glm3)[6]) / (coef(glm3)[2] + coef(glm3)[35]))
+predicted_L50.60s <- -((coef(glm3)[1] + coef(glm3)[7]) / (coef(glm3)[2] + coef(glm3)[36]))
+predicted_L50.62s <- -((coef(glm3)[1] + coef(glm3)[8]) / (coef(glm3)[2] + coef(glm3)[37]))
+predicted_L50.66s <- -((coef(glm3)[1] + coef(glm3)[9]) / (coef(glm3)[2] + coef(glm3)[38]))
+predicted_L50.67s <- -((coef(glm3)[1] + coef(glm3)[10]) / (coef(glm3)[2] + coef(glm3)[39]))
+predicted_L50.68s <- -((coef(glm3)[1] + coef(glm3)[11]) / (coef(glm3)[2] + coef(glm3)[40]))
+predicted_L50.73s <- -((coef(glm3)[1] + coef(glm3)[12]) / (coef(glm3)[2] + coef(glm3)[41]))
+predicted_L50.74s <- -((coef(glm3)[1] + coef(glm3)[13]) / (coef(glm3)[2] + coef(glm3)[42]))
+predicted_L50.75s <- -((coef(glm3)[1] + coef(glm3)[14]) / (coef(glm3)[2] + coef(glm3)[43]))
+predicted_L50.76s <- -((coef(glm3)[1] + coef(glm3)[15]) / (coef(glm3)[2] + coef(glm3)[44]))
+predicted_L50.77s <- -((coef(glm3)[1] + coef(glm3)[16]) / (coef(glm3)[2] + coef(glm3)[45]))
+predicted_L50.78s <- -((coef(glm3)[1] + coef(glm3)[17]) / (coef(glm3)[2] + coef(glm3)[46]))
+predicted_L50.79s <- -((coef(glm3)[1] + coef(glm3)[18]) / (coef(glm3)[2] + coef(glm3)[47]))
+predicted_L50.84s <- -((coef(glm3)[1] + coef(glm3)[19]) / (coef(glm3)[2] + coef(glm3)[48]))
+predicted_L50.87s <- -((coef(glm3)[1] + coef(glm3)[20]) / (coef(glm3)[2] + coef(glm3)[49]))
+predicted_L50.88s <- -((coef(glm3)[1] + coef(glm3)[21]) / (coef(glm3)[2] + coef(glm3)[50]))
+predicted_L50.89s <- -((coef(glm3)[1] + coef(glm3)[22]) / (coef(glm3)[2] + coef(glm3)[51]))
+predicted_L50.90s <- -((coef(glm3)[1] + coef(glm3)[23]) / (coef(glm3)[2] + coef(glm3)[52]))
+predicted_L50.91s <- -((coef(glm3)[1] + coef(glm3)[24]) / (coef(glm3)[2] + coef(glm3)[53]))
+predicted_L50.92s <- -((coef(glm3)[1] + coef(glm3)[25]) / (coef(glm3)[2] + coef(glm3)[54]))
+predicted_L50.93s <- -((coef(glm3)[1] + coef(glm3)[26]) / (coef(glm3)[2] + coef(glm3)[55]))
+predicted_L50.95s <- -((coef(glm3)[1] + coef(glm3)[27]) / (coef(glm3)[2] + coef(glm3)[56]))
+predicted_L50.98s <- -((coef(glm3)[1] + coef(glm3)[28]) / (coef(glm3)[2] + coef(glm3)[57]))
+predicted_L50.99s <- -((coef(glm3)[1] + coef(glm3)[29]) / (coef(glm3)[2] + coef(glm3)[58]))
+predicted_L50.04s <- -((coef(glm3)[1] + coef(glm3)[30]) / (coef(glm3)[2] + coef(glm3)[59]))
+predicted_L50.06s <- -((coef(glm3)[1] + coef(glm3)[31]) / (coef(glm3)[2] + coef(glm3)[60]))
+
+```
+
+```{r}
+year <- c("1950", "1951", "1957", "1958", "1959", "1960", "1962", "1966", "1967", "1968", "1973", "1974", "1975", "1976", "1977", "1978", "1979", "1984", "1987", "1988", "1989", "1990", "1991", "1992", "1993", "1995", "1998", "1999", "2004", "2006")
+predicted_values <- c(predicted_L50.50s, predicted_L50.51s, predicted_L50.57s, predicted_L50.58s, predicted_L50.59s, predicted_L50.60s, predicted_L50.62s, predicted_L50.66s, predicted_L50.67s, predicted_L50.68s, predicted_L50.73s, predicted_L50.74s, predicted_L50.75s, predicted_L50.76s, predicted_L50.77s, predicted_L50.78s, predicted_L50.79s, predicted_L50.84s, predicted_L50.87s, predicted_L50.88s, predicted_L50.89s, predicted_L50.90s, predicted_L50.91s, predicted_L50.92s, predicted_L50.93s, predicted_L50.95s, predicted_L50.98s, predicted_L50.99s, predicted_L50.04s, predicted_L50.06s)
+
+lower_ci <- c(ci.L50.50s[1], ci.L50.51s[1], ci.L50.57s[1], ci.L50.58s[1], ci.L50.59s[1], ci.L50.60s[1], ci.L50.62s[1], ci.L50.66s[1], ci.L50.67s[1], ci.L50.68s[1], ci.L50.73s[1], ci.L50.74s[1], ci.L50.75s[1], ci.L50.76s[1], ci.L50.77s[1], ci.L50.78s[1], ci.L50.79s[1], ci.L50.84s[1], ci.L50.87s[1], ci.L50.88s[1], ci.L50.89s[1], ci.L50.90s[1], ci.L50.91s[1], ci.L50.92s[1], ci.L50.93s[1], ci.L50.95s[1], ci.L50.98s[1], ci.L50.99s[1], ci.L50.04s[1], ci.L50.06s[1])
+
+upper_ci <- c(ci.L50.50s[2], ci.L50.51s[2], ci.L50.57s[2], ci.L50.58s[2], ci.L50.59s[2], ci.L50.60s[2], ci.L50.62s[2], ci.L50.66s[2], ci.L50.67s[2], ci.L50.68s[2], ci.L50.73s[2], ci.L50.74s[2], ci.L50.75s[2], ci.L50.76s[2], ci.L50.77s[2], ci.L50.78s[2], ci.L50.79s[2], ci.L50.84s[2], ci.L50.87s[2], ci.L50.88s[2], ci.L50.89s[2], ci.L50.90s[2], ci.L50.91s[2], ci.L50.92s[2], ci.L50.93s[2], ci.L50.95s[2], ci.L50.98s[2], ci.L50.99s[2], ci.L50.04s[2], ci.L50.06s[2])
+
+breamMatSize <- data.frame(year, predicted_values, lower_ci, upper_ci)
+
+# Create a data frame with predicted L50 values
+predicted_labels <- data.frame(year, predicted_values)
+
+# Plot
+ggplot(breamMatSize, aes(x = year, y = predicted_values)) +
+  geom_point(size = 2, color = "black") +
+  geom_errorbar(aes(ymin = lower_ci, ymax = upper_ci), width = 0.05, color = "black", size = 1) +
+  geom_text(data = predicted_labels, aes(label = round(predicted_values, 1)), hjust = 1.2, vjust = -0.5, size = 4) +
+  geom_smooth(method = "loess", color = "blue", size = 1, se = FALSE) +
+  labs(title = "Bream Changes of L50 with Confidence Intervals",
+       x = "Year",
+       y = "Predicted L50") +
+  ylim(15, 45) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(size = 12, angle = 45, hjust = 1),  # Increase size of x-axis text
+        axis.text.y = element_text(size = 15),  # Increase size of y-axis text
+        axis.title = element_text(size = 15),   # Increase size of axis titles
+        plot.title = element_text(size = 16))   # Increase size of plot title
+```
+
+Table with number of observations and main statistics
+
+```{r}
+Breamt_table <- Bream1 %>%
+  group_by(year, maturity) %>%
+  summarise(
+    mean_total_length = mean(total_length),
+    median_total_length = median(total_length),
+    min_total_length = min(total_length),
+    max_total_length = max(total_length), count_observation = n())
+
+br_table <- Bream1 %>%
+  count(maturity, year) %>% pivot_wider(names_from = maturity, values_from = n, values_fill = 0)
+```
+
+## Bream trend test
+
+```{r}
+str(breamMatSize, vec.len = 2)
+breamMatSize$year <- as.numeric(breamMatSize$year)
+breamMat <- breamMatSize %>% filter(predicted_values >= 0 & predicted_values <= 50)
+
+breamMat2 <- dplyr::select(breamMat, predicted_values)
+ABtimeseries <- ts(breamMat2)
+#Plot the time series data
+plot(ABtimeseries)
+#Add a smooth line to visualize the trend 
+lines(lowess(time(ABtimeseries),ABtimeseries), col='red')
+
+# Kendall's Nonparametric Test for Montonic Trend
+kendallTrendTest(predicted_values ~ year, data = breamMat)
+# tau =  -0.2676923
+# z = -1.895573
+# P-value:   0.05801648
+
+# There is a highly significant negative trend in the data
+# (i.e. size at maturity has significantly declined since 1950)
+```
+
+```{r}
+# Weighted regression
+# Fit a Gaussian LM
+gaus1 <- lm(predicted_values ~ year, data = breamMat)
+# Extract weights for each year based on model residuals
+weighting <- 1 / lm(abs(gaus1$residuals) ~ gaus1$fitted.values)$fitted.values^2
+# Fit a weighted Gaussian LM
+wt_gaus1 <- lm(predicted_values ~ year, 
+                                  weights = weighting,
+                                  data = breamMat)
+#Model output
+summary(wt_gaus1)
+#              Estimate Std. Error t value Pr(>|t|)    
+# (Intercept) 296.50419  142.65503   2.078   0.0485 *
+# year         -0.13242    0.07194  -1.841   0.0781 .
+
+# Plot model
+base_plot <- plot_model(wt_gaus1, type = "pred", 
+           terms = c("year"),
+           colors = c("black"),
+           show.data = TRUE,
+           title = "Bream", 
+           jitter = 0.1,
+           axis.title = c("Year", "Size at maturity (cm)"),
+           show.legend = FALSE)
+
+# Generate predictions and confidence intervals
+new_data <- data.frame(year = seq(min(breamMat$year), max(breamMat$year), length.out = 100))
+predictions <- predict(wt_gaus1, newdata = new_data, interval = "confidence", level = 0.95)
+
+# Combine original data with predictions and confidence intervals
+plot_data <- data.frame(
+  x = new_data$year,
+  predicted = predictions[, 1],
+  ci.l = predictions[, "lwr"],
+  ci.u = predictions[, "upr"]
+)
+
+# Define the specific years you want to show on the x-axis
+specific_years <- c(1960, 1980, 2000)
+
+# Plot predicted_values with error bars and add fitted line with shadow
+br <- ggplot() +
+  geom_point(data = breamMat, aes(x = year, y = predicted_values), color = "#6E6E6E", size = 1.5) +  # Points for predicted_values
+  geom_errorbar(data = breamMat, aes(x = year, ymin = lower_ci, ymax = upper_ci), width = 0.3, size = 0.5, color = "black", alpha = 0.6) +  # Error bars for confidence intervals
+  geom_line(data = plot_data, aes(x = x, y = predicted), color = "black") +  # Fitted line from model predictions
+  geom_ribbon(data = plot_data, aes(x = x, ymin = ci.l, ymax = ci.u), alpha = 0.2, fill = "black") +
+  annotate("text", x = Inf, y = Inf, label = paste0("p = 0.078"), 
+           hjust = 1.2, vjust = 2, size = 5) + labs(title = "Bream", x = "Year", y = "Length (cm)") + scale_x_continuous(breaks = specific_years) + expand_limits(y = 0) + My_theme
+
+```
+
+Accounting for uncertainty in each annual estimate of length at 50% maturity
+
+```{r}
+# Creating random samples of size at maturity for every year based on the range of the 95% confidence intervals
+Y1950 <- runif(100, min=breamMat[1,3], max=breamMat[1,4])
+Y1951 <- runif(100, min=breamMat[2,3], max=breamMat[2,4])
+Y1959 <- runif(100, min=breamMat[3,3], max=breamMat[3,4])
+Y1960 <- runif(100, min=breamMat[4,3], max=breamMat[4,4])
+Y1966 <- runif(100, min=breamMat[5,3], max=breamMat[5,4])
+Y1967 <- runif(100, min=breamMat[6,3], max=breamMat[6,4])
+Y1968 <- runif(100, min=breamMat[7,3], max=breamMat[7,4])
+Y1973 <- runif(100, min=breamMat[8,3], max=breamMat[8,4])
+Y1974 <- runif(100, min=breamMat[9,3], max=breamMat[9,4])
+Y1975 <- runif(100, min=breamMat[10,3], max=breamMat[10,4])
+Y1976 <- runif(100, min=breamMat[11,3], max=breamMat[11,4])
+Y1977 <- runif(100, min=breamMat[12,3], max=breamMat[12,4])
+Y1978 <- runif(100, min=breamMat[13,3], max=breamMat[13,4])
+Y1979 <- runif(100, min=breamMat[14,3], max=breamMat[14,4])
+Y1984 <- runif(100, min=breamMat[15,3], max=breamMat[15,4])
+Y1987 <- runif(100, min=breamMat[16,3], max=breamMat[16,4])
+Y1988 <- runif(100, min=breamMat[17,3], max=breamMat[17,4])
+Y1989 <- runif(100, min=breamMat[18,3], max=breamMat[18,4])
+Y1990 <- runif(100, min=breamMat[19,3], max=breamMat[19,4])
+Y1991 <- runif(100, min=breamMat[20,3], max=breamMat[20,4])
+Y1992 <- runif(100, min=breamMat[21,3], max=breamMat[21,4])
+Y1993 <- runif(100, min=breamMat[22,3], max=breamMat[22,4])
+Y1995 <- runif(100, min=breamMat[23,3], max=breamMat[23,4])
+Y1998 <- runif(100, min=breamMat[24,3], max=breamMat[24,4])
+Y1999 <- runif(100, min=breamMat[25,3], max=breamMat[25,4])
+Y2004 <- runif(100, min=breamMat[26,3], max=breamMat[26,4])
+Y2006 <- runif(100, min=breamMat[27,3], max=breamMat[27,4])
+
+# Combine the vectors into a data frame
+data <- data.frame(
+  Y1950, Y1951, Y1959, Y1960, Y1966, Y1967, Y1968, Y1973, Y1974, Y1975, 
+  Y1976, Y1977, Y1978, Y1979, Y1984, Y1987, Y1988, Y1989, Y1990, Y1991, 
+  Y1992, Y1993, Y1995, Y1998, Y1999, Y2004, Y2006)
+# Reshape data from wide to long format
+data_long <- reshape2::melt(data, variable.name = "year", value.name = "predicted_values")
+# Convert year to numeric
+data_long$year <- as.numeric(gsub("Y", "", data_long$year))
+
+```
+
+```{r}
+data_long <- data_long %>%
+  left_join(breamMat, by = c("year" = "year"))
+
+# Initialize a data frame to store the extracted results
+results_df <- data.frame(
+  tau = numeric(100),
+  z = numeric(100),
+  p_value = numeric(100),
+  intercept = numeric(100),
+  slope = numeric(100),
+  simulation = numeric(100)
+)
+
+# List to store sampled data with predictions for plotting
+sampled_data_list <- list()
+
+# Loop to run kendallTrendTest and linear model fitting 100 times
+for (i in 1:100) {
+  # Sample one predicted value for each year
+  sampled_data <- data_long %>%
+    group_by(year) %>%
+    sample_n(1) %>%
+    ungroup()
+  # Run the Kendall trend test on the sampled data
+  kendall_result <- kendallTrendTest(predicted_values.x ~ year, data = sampled_data)
+  # Extract the Kendall trend test parameters
+  tau <- kendall_result$estimate[1]
+  z <- kendall_result$statistic
+  p_value <- kendall_result$p.value
+  # Fit a linear model to the sampled data
+  lm_model <- lm(predicted_values.x ~ year, data = sampled_data)
+  # Extract the intercept and slope from the linear model
+  intercept <- coef(lm_model)[1]
+  slope <- coef(lm_model)[2]
+  # Store the extracted parameters in the data frame
+  results_df$tau[i] <- tau
+  results_df$z[i] <- z
+  results_df$p_value[i] <- p_value
+  results_df$intercept[i] <- intercept
+  results_df$slope[i] <- slope
+  results_df$simulation[i] <- i 
+  # Add predictions to the sampled data for plotting
+  sampled_data <- sampled_data %>%
+    mutate(predicted = predict(lm_model),
+           simulation = i)
+  # Store the sampled data
+  sampled_data_list[[i]] <- sampled_data
+}
+
+# Combine all sampled data into one data frame for plotting
+combined_sampled_data <- bind_rows(sampled_data_list)
+# Display the results
+print(results_df)
+# Calculate the percentage of significant p-values (e.g., p < 0.05)
+significance_level <- 0.05
+significant_p_values <- sum(results_df$p_value < significance_level)
+
+# Print the percentage of significant p-values
+cat("Percentage of significant p-values (p <", significance_level, "):", significant_p_values, "%\n")
+
+# Merge results_df with combined_sampled_data
+combined_sampled_data <- combined_sampled_data %>%
+  left_join(results_df, by = "simulation")
+
+# Plot the 100 different lines to show the trend
+lmb <- ggplot(combined_sampled_data, aes(x = year, y = predicted_values.x, group = simulation)) +
+  geom_ribbon(aes(ymin = lower_ci, ymax = upper_ci), alpha = 0.6, fill = "#ececec") +
+ geom_line(aes(y = predicted, color = p_value < 0.05), alpha = 0.3) +
+  scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black"), guide = FALSE) +
+  geom_point(alpha = 0.1) +
+  labs(title = "Bream", x = "Year", y = "Predicted L50") +
+annotate("text", x = max(combined_sampled_data$year), y = min(combined_sampled_data$predicted_values.x), label = paste0("p < ", significance_level, " in ", significant_p_values, "%"), hjust = 1, vjust = -18, size = 5, color = "black") +
+  theme_minimal() + My_theme
+```
+
+
+#### Roach
+
+```{r}
+Roach_mat <- L50data %>% filter (spp_name_lt=="Kuoja") %>% select(spp_name_lt, total_length, gonad_stage, year, month, sex_en) %>% filter(month == 6 | month == 7 | month == 8)
+
+# Adding gonad stage 1 to smallest individuals which total length less than 20 and which has no gonad stage data.
+Roach_mat <- Roach_mat %>% mutate(gonad_stage = ifelse(is.na(gonad_stage) & total_length < 5, "1", gonad_stage), gonad_stage = ifelse(gonad_stage == "2" & total_length > 30, NA, gonad_stage)) %>% drop_na(gonad_stage) %>% drop_na(total_length)
+
+table(Roach_mat$gonad_stage)
+table(Roach_mat$year)
+```
+
+
+Removing outliers
+```{r}
+# Create box plot to see outliers
+boxplot(Roach_mat$total_length ~ Roach_mat$gonad_stage, xlab = "Gonad stage", ylab = "Length (cm)")
+
+# Identify the outliers based on the box plot
+# outliers <- boxplot(Roach_mat$total_length ~ Roach_mat$gonad_stage, plot = FALSE)$out
+# Remove outliers from the dataset
+# Roach_mat <- Roach_mat[!(Roach_mat$total_length %in% outliers), ]
+```
+
+All different years
+
+```{r}
+# Calculate the number of observations per year in zander
+year_counts_Roach_mat <- Roach_mat %>%
+  group_by(year) %>%
+  summarise(n = n())
+
+# Filter the zander dataset to include only years with more than 15 observations
+Roach_mat <- Roach_mat %>%
+  inner_join(year_counts_Roach_mat, by = "year") %>%
+  filter(n > 10) %>%
+  select(-n)
+
+# Find unique years in the zander dataset
+unique_years <- unique(Roach_mat$year)
+
+# Create an empty dataframe to store the fictitious individuals
+new_individuals <- data.frame()
+
+# Loop through each unique year
+for (year in unique_years) {
+  # Generate 30 fictitious individuals for the current year
+  new_data <- data.frame(
+    spp_name_lt = rep("Kuoja", 30),
+    total_length = runif(30, min = 1, max = 10),
+    gonad_stage = rep("1", 30),
+    year = rep(year, 30),
+    month = rep(7, 30),
+    sex_en = rep(NA, 30)
+  )
+  
+  # Append the new data to the new_individuals dataframe
+  new_individuals <- rbind(new_individuals, new_data)
+}
+
+# Combine the new individuals with the original zander dataset
+Roach_mat <- rbind(Roach_mat, new_individuals)
+
+# Creating new column with binomial maturity data (0 - Immature, 1 - Mature)
+Roach_mat <- Roach_mat %>% 
+  mutate(maturity = as.factor(ifelse(gonad_stage < 3, 0, 1)))
+
+Roach_mat <- Roach_mat |>
+  drop_na(year) |>
+  mutate(year = factor(year, levels = sort(unique(year))))
+
+glm3 <- glm(maturity ~ total_length * year, data = Roach_mat, family=binomial)
+
+car::Anova(glm3)
+coef(glm3)
+summary(glm3)
+bcL3 <- car::Boot(glm3)
+
+L50.50s = apply(bcL3$t[,1:2], 1, lrPerc, p = 0.5)
+L50.59s = apply(bcL3$t[,1:2] + bcL3$t[,c(3, 17)], 1, lrPerc, p = 0.5)
+L50.60s = apply(bcL3$t[,1:2] + bcL3$t[,c(4, 18)], 1, lrPerc, p = 0.5)
+L50.62s = apply(bcL3$t[,1:2] + bcL3$t[,c(5, 19)], 1, lrPerc, p = 0.5)
+L50.66s = apply(bcL3$t[,1:2] + bcL3$t[,c(6, 20)], 1, lrPerc, p = 0.5)
+L50.68s = apply(bcL3$t[,1:2] + bcL3$t[,c(7, 21)], 1, lrPerc, p = 0.5)
+L50.73s = apply(bcL3$t[,1:2] + bcL3$t[,c(8, 22)], 1, lrPerc, p = 0.5)
+L50.78s = apply(bcL3$t[,1:2] + bcL3$t[,c(9, 23)], 1, lrPerc, p = 0.5)
+L50.79s = apply(bcL3$t[,1:2] + bcL3$t[,c(10, 24)], 1, lrPerc, p = 0.5)
+L50.82s = apply(bcL3$t[,1:2] + bcL3$t[,c(11, 25)], 1, lrPerc, p = 0.5)
+L50.89s = apply(bcL3$t[,1:2] + bcL3$t[,c(12, 26)], 1, lrPerc, p = 0.5)
+L50.90s = apply(bcL3$t[,1:2] + bcL3$t[,c(13, 27)], 1, lrPerc, p = 0.5)
+L50.13s = apply(bcL3$t[,1:2] + bcL3$t[,c(14, 28)], 1, lrPerc, p = 0.5)
+L50.14s = apply(bcL3$t[,1:2] + bcL3$t[,c(15, 29)], 1, lrPerc, p = 0.5)
+L50.15s = apply(bcL3$t[,1:2] + bcL3$t[,c(16, 30)], 1, lrPerc, p = 0.5)
+
+( ci.L50.50s <-  quantile(L50.50s,c(0.025,0.975)) )
+( ci.L50.59s <-  quantile(L50.59s,c(0.025,0.975)) )
+( ci.L50.60s <-  quantile(L50.60s,c(0.025,0.975)) )
+( ci.L50.62s <-  quantile(L50.62s,c(0.025,0.975)) )
+( ci.L50.66s <-  quantile(L50.66s,c(0.025,0.975)) )
+( ci.L50.68s <-  quantile(L50.68s,c(0.025,0.975)) )
+( ci.L50.73s <-  quantile(L50.73s,c(0.025,0.975)) )
+( ci.L50.78s <-  quantile(L50.78s,c(0.025,0.975)) )
+( ci.L50.79s <-  quantile(L50.79s,c(0.025,0.975)) )
+( ci.L50.82s <-  quantile(L50.82s,c(0.025,0.975)) )
+( ci.L50.89s <-  quantile(L50.89s,c(0.025,0.975)) )
+( ci.L50.90s <-  quantile(L50.90s,c(0.025,0.975)) )
+( ci.L50.13s <-  quantile(L50.13s,c(0.025,0.975)) )
+( ci.L50.14s <-  quantile(L50.14s,c(0.025,0.975)) )
+( ci.L50.15s <-  quantile(L50.15s,c(0.025,0.975)) )
+
+# Maturity size -α/βi
+predicted_L50.50s <- -(coef(glm3)[1] / coef(glm3)[2])
+predicted_L50.59s <- -((coef(glm3)[1] + coef(glm3)[3]) / (coef(glm3)[2] + coef(glm3)[17]))
+predicted_L50.60s <- -((coef(glm3)[1] + coef(glm3)[4]) / (coef(glm3)[2] + coef(glm3)[18]))
+predicted_L50.62s <- -((coef(glm3)[1] + coef(glm3)[5]) / (coef(glm3)[2] + coef(glm3)[19]))
+predicted_L50.66s <- -((coef(glm3)[1] + coef(glm3)[6]) / (coef(glm3)[2] + coef(glm3)[20]))
+predicted_L50.68s <- -((coef(glm3)[1] + coef(glm3)[7]) / (coef(glm3)[2] + coef(glm3)[21]))
+predicted_L50.73s <- -((coef(glm3)[1] + coef(glm3)[8]) / (coef(glm3)[2] + coef(glm3)[22]))
+predicted_L50.78s <- -((coef(glm3)[1] + coef(glm3)[9]) / (coef(glm3)[2] + coef(glm3)[23]))
+predicted_L50.79s <- -((coef(glm3)[1] + coef(glm3)[10]) / (coef(glm3)[2] + coef(glm3)[24]))
+predicted_L50.82s <- -((coef(glm3)[1] + coef(glm3)[11]) / (coef(glm3)[2] + coef(glm3)[25]))
+predicted_L50.89s <- -((coef(glm3)[1] + coef(glm3)[12]) / (coef(glm3)[2] + coef(glm3)[26]))
+predicted_L50.90s <- -((coef(glm3)[1] + coef(glm3)[13]) / (coef(glm3)[2] + coef(glm3)[27]))
+predicted_L50.13s <- -((coef(glm3)[1] + coef(glm3)[14]) / (coef(glm3)[2] + coef(glm3)[28]))
+predicted_L50.14s <- -((coef(glm3)[1] + coef(glm3)[15]) / (coef(glm3)[2] + coef(glm3)[29]))
+predicted_L50.15s <- -((coef(glm3)[1] + coef(glm3)[16]) / (coef(glm3)[2] + coef(glm3)[30]))
+
+```
+
+```{r}
+year <- c("1950", "1959", "1960", "1962", "1966", "1968", "1973", "1978", "1979", "1982", "1989", "1990", "2013", "2014", "2015")
+predicted_values <- c(predicted_L50.50s, predicted_L50.59s, predicted_L50.60s, predicted_L50.62s, predicted_L50.66s, predicted_L50.68s, predicted_L50.73s, predicted_L50.78s, predicted_L50.79s, predicted_L50.82s, predicted_L50.89s, predicted_L50.90s, predicted_L50.13s, predicted_L50.14s, predicted_L50.15s)
+
+lower_ci <- c(ci.L50.50s[1], ci.L50.59s[1], ci.L50.60s[1], ci.L50.62s[1], ci.L50.66s[1], ci.L50.68s[1], ci.L50.73s[1], ci.L50.78s[1], ci.L50.79s[1], ci.L50.82s[1], ci.L50.89s[1], ci.L50.90s[1], ci.L50.13s[1], ci.L50.14s[1], ci.L50.15s[1])
+
+upper_ci <- c(ci.L50.50s[2], ci.L50.59s[2], ci.L50.60s[2], ci.L50.62s[2], ci.L50.66s[2], ci.L50.68s[2], ci.L50.73s[2], ci.L50.78s[2], ci.L50.79s[2], ci.L50.82s[2], ci.L50.89s[2], ci.L50.90s[2], ci.L50.13s[2], ci.L50.14s[2], ci.L50.15s[2])
+
+roachMatSize <- data.frame(year, predicted_values, lower_ci, upper_ci)
+
+# Create a data frame with predicted L50 values
+predicted_labels <- data.frame(year, predicted_values)
+
+# Plot
+ggplot(roachMatSize, aes(x = year, y = predicted_values)) +
+  geom_point(size = 2, color = "black") +
+  geom_errorbar(aes(ymin = lower_ci, ymax = upper_ci), width = 0.05, color = "black", size = 1) +
+  geom_text(data = predicted_labels, aes(label = round(predicted_values, 1)), hjust = 1.2, vjust = -0.5, size = 4) +
+  geom_smooth(method = "loess", color = "blue", size = 1, se = FALSE) +
+  labs(title = "Roach Changes of L50 with Confidence Intervals",
+       x = "Year",
+       y = "Predicted L50") +
+  ylim(0, 50) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(size = 12, angle = 45, hjust = 1),  # Increase size of x-axis text
+        axis.text.y = element_text(size = 15),  # Increase size of y-axis text
+        axis.title = element_text(size = 15),   # Increase size of axis titles
+        plot.title = element_text(size = 16))   # Increase size of plot title
+```
+
+Tables with numbers of observations and main statistics
+```{r}
+Roach_mat_table <- Roach_mat %>%
+  group_by(year, maturity) %>%
+  summarise(
+    mean_total_length = mean(total_length),
+    median_total_length = median(total_length),
+    min_total_length = min(total_length),
+    max_total_length = max(total_length), count_observation = n())
+
+roach_table <- Roach_mat %>%
+  count(maturity, year) %>% pivot_wider(names_from = maturity, values_from = n, values_fill = 0)
+```
+
+```{r}
+Roach_mat__1 <- Roach_mat %>%
+  group_by(year) %>%
+  summarise(
+    mean_total_length = mean(total_length),
+    median_total_length = median(total_length),
+    min_total_length = min(total_length),
+    max_total_length = max(total_length), count_observation = n())
+
+```
+
+## Roach trend test
+
+```{r}
+str(roachMatSize, vec.len = 2)
+roachMatSize$year <- as.numeric(roachMatSize$year)
+# Remove rows where predicted_values are higher than 40 or lower than 0
+roachMat <- roachMatSize %>% filter(predicted_values <= 40 & predicted_values >= 1)
+
+roachMat2 <- select(roachMat, predicted_values)
+ABtimeseries <- ts(roachMat2)
+#Plot the time series data
+plot(ABtimeseries)
+#Add a smooth line to visualize the trend 
+lines(lowess(time(ABtimeseries),ABtimeseries), col='red')
+
+kendallTrendTest(predicted_values ~ year, data = roachMat)
+# tau =   -0.7272727
+# z = -3.22291
+# P-value:  0.001268955
+
+# There is a significant negative trend in the data
+# (i.e. size at maturity has significantly declined since 1950)
+```
+
+```{r}
+# Weighted regression
+# Fit a Gaussian LM
+gaus1 <- lm(predicted_values ~ year, data = roachMat)
+# Extract weights for each year based on model residuals
+weighting <- 1 / lm(abs(gaus1$residuals) ~ gaus1$fitted.values)$fitted.values^2
+# Fit a weighted Gaussian LM
+wt_gaus1 <- lm(predicted_values ~ year, 
+                                  weights = weighting,
+                                  data = roachMat)
+#Model output
+summary(wt_gaus1)
+
+#              Estimate Std. Error t value Pr(>|t|)    
+# (Intercept) 403.9439    62.3780   6.476 7.11e-05 ***
+# year         -0.1931     0.0311  -6.210    1e-04 ***
+
+# Significant negative relationship
+p_value <-  0.001
+
+base_plot <- plot_model(wt_gaus1, type = "pred", 
+           terms = c("year"),
+           colors = c("black"),
+           show.data = TRUE,
+           title = "Roach", 
+           jitter = 0.1,
+           axis.title = c("Year", "Size at maturity (cm)"),
+           show.legend = FALSE, dot.size = 1.5)
+
+# Extract the plot data from plot_model
+plot_data <- base_plot$data
+# Combine plot data with AB1 for matching
+combined_data <- merge(plot_data, roachMat, by.x = "x", by.y = "year")
+# Add confidence intervals and customize the plot
+r <- base_plot +
+  geom_errorbar(data = combined_data, aes(x = x, ymin = lower_ci, ymax = upper_ci), width = 0.3, size = 0.5, color = "black", alpha = 0.6) +
+  annotate("text", x = Inf, y = Inf, label = paste0("p = ", format(p_value, digits = 4)), 
+           hjust = 1.2, vjust = 2, size = 5) +
+  My_theme
+
+# Print the final plot
+print(r)
+```
+
+Accounting for uncertainty in each annual estimate of length at 50% maturity for all predicted L50 values 
+
+```{r}
+# Creating random samples of size at maturity for every year based on the range of the 95% confidence intervals
+Y1950 <- runif(100, min=roachMat[1,3], max=roachMat[1,4])
+Y1959 <- runif(100, min=roachMat[2,3], max=roachMat[2,4])
+Y1960 <- runif(100, min=roachMat[3,3], max=roachMat[3,4])
+Y1966 <- runif(100, min=roachMat[4,3], max=roachMat[4,4])
+Y1968 <- runif(100, min=roachMat[5,3], max=roachMat[5,4])
+Y1978 <- runif(100, min=roachMat[6,3], max=roachMat[6,4])
+Y1979 <- runif(100, min=roachMat[7,3], max=roachMat[7,4])
+Y1982 <- runif(100, min=roachMat[8,3], max=roachMat[8,4])
+Y1989 <- runif(100, min=roachMat[9,3], max=roachMat[9,4])
+Y1990 <- runif(100, min=roachMat[10,3], max=roachMat[10,4])
+Y2014 <- runif(100, min=roachMat[11,3], max=roachMat[11,4])
+Y2015 <- runif(100, min=roachMat[12,3], max=roachMat[12,4])
+
+
+# Combine the vectors into a data frame
+data <- data.frame(Y1950, Y1959, Y1960, Y1966, Y1968, Y1978, Y1979, Y1982, Y1989, Y1990, Y2014, Y2015)
+# Reshape data from wide to long format
+data_long <- reshape2::melt(data, variable.name = "year", value.name = "predicted_values")
+# Convert year to numeric
+data_long$year <- as.numeric(gsub("Y", "", data_long$year))
+```
+
+```{r}
+data_long <- data_long %>%
+  left_join(roachMat, by = c("year" = "year"))
+
+# Initialize a data frame to store the extracted results
+results_df <- data.frame(
+  tau = numeric(100),
+  z = numeric(100),
+  p_value = numeric(100),
+  intercept = numeric(100),
+  slope = numeric(100),
+  simulation = numeric(100)
+)
+
+# List to store sampled data with predictions for plotting
+sampled_data_list <- list()
+
+# Loop to run kendallTrendTest and linear model fitting 100 times
+for (i in 1:100) {
+  # Sample one predicted value for each year
+  sampled_data <- data_long %>%
+    group_by(year) %>%
+    sample_n(1) %>%
+    ungroup()
+  
+  # Run the Kendall trend test on the sampled data
+  kendall_result <- kendallTrendTest(predicted_values.x ~ year, data = sampled_data)
+  
+  # Extract the Kendall trend test parameters
+  tau <- kendall_result$estimate[1]
+  z <- kendall_result$statistic
+  p_value <- kendall_result$p.value
+  
+  # Fit a linear model to the sampled data
+  lm_model <- lm(predicted_values.x ~ year, data = sampled_data)
+  
+  # Extract the intercept and slope from the linear model
+  intercept <- coef(lm_model)[1]
+  slope <- coef(lm_model)[2]
+  
+  # Store the extracted parameters in the data frame
+  results_df$tau[i] <- tau
+  results_df$z[i] <- z
+  results_df$p_value[i] <- p_value
+  results_df$intercept[i] <- intercept
+  results_df$slope[i] <- slope
+  results_df$simulation[i] <- i 
+  
+  # Add predictions to the sampled data for plotting
+  sampled_data <- sampled_data %>%
+    mutate(predicted = predict(lm_model),
+           simulation = i)
+  
+  # Store the sampled data
+  sampled_data_list[[i]] <- sampled_data
+}
+# Combine all sampled data into one data frame for plotting
+combined_sampled_data <- bind_rows(sampled_data_list)
+# Display the results
+print(results_df)
+
+# Calculate the percentage of significant p-values (e.g., p < 0.05)
+significance_level <- 0.05
+significant_p_values <- sum(results_df$p_value < significance_level)
+
+# Print the percentage of significant p-values
+cat("Percentage of significant p-values (p <", significance_level, "):", significant_p_values, "%\n")
+
+# Merge results_df with combined_sampled_data
+combined_sampled_data <- combined_sampled_data %>%
+  left_join(results_df, by = "simulation")
+
+# Plot the 100 different lines to show the trend
+lmr <- ggplot(combined_sampled_data, aes(x = year, y = predicted_values.x, group = simulation)) +
+  geom_ribbon(aes(ymin = lower_ci, ymax = upper_ci), alpha = 0.6, fill = "#ececec") +
+ geom_line(aes(y = predicted, color = p_value < 0.05), alpha = 0.3) +
+  scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black"), guide = FALSE) +
+  geom_point(alpha = 0.1) +
+  labs(title = "Roach", x = "Year", y = "Predicted L50") + 
+annotate("text", x = max(combined_sampled_data$year), y = min(combined_sampled_data$predicted_values.x), label = paste0("p < ", significance_level, " in ", significant_p_values, "%"), hjust = 1, vjust = -18, size = 5, color = "black") + My_theme
+
+```
+
+
+#### Perch
+
+```{r}
+Perch1 <- L50data %>% filter (spp_name_lt=="Eserys") %>% select(spp_name_lt, total_length, gonad_stage, year, month, sex_en) %>% filter(month == 6 | month == 7 | month == 8)
+
+# Adding gonad stage 1 to smallest individuals which total length less than 10 and which has no gonad stage data.
+Perch1 <- Perch1 %>% mutate(gonad_stage = ifelse(is.na(gonad_stage) & total_length < 5, "1", gonad_stage), gonad_stage = ifelse(gonad_stage == "2" & total_length > 30, NA, gonad_stage)) %>% drop_na(gonad_stage) %>% drop_na(total_length)
+
+```
+
+Removing outliers
+```{r}
+# Create box plot to see outliers
+boxplot(Perch1$total_length ~ Perch1$gonad_stage, xlab = "Gonad stage", ylab = "Length (cm)")
+
+# no obvious outliers
+
+# Identify the outliers based on the box plot
+# outliers <- boxplot(Perch1$total_length ~ Perch1$gonad_stage, plot = FALSE)$out
+# Remove outliers from the dataset
+# Perch1 <- Perch1[!(Perch1$total_length %in% outliers), ]
+```
+
+All different years
+
+```{r}
+# Calculate the number of observations per year in zander
+year_counts_Perch1 <- Perch1 %>%
+  group_by(year) %>%
+  summarise(n = n())
+
+# Filter the zander dataset to include only years with more than 15 observations
+Perch1 <- Perch1 %>%
+  inner_join(year_counts_Perch1, by = "year") %>%
+  filter(n > 10) %>%
+  select(-n)
+
+# Find unique years in the zander dataset
+unique_years <- unique(Perch1$year)
+
+# Create an empty dataframe to store the fictitious individuals
+new_individuals <- data.frame()
+
+# Loop through each unique year
+for (year in unique_years) {
+  # Generate 30 fictitious individuals for the current year
+  new_data <- data.frame(
+    spp_name_lt = rep("Eserys", 30),
+    total_length = runif(30, min = 1, max = 10),
+    gonad_stage = rep("1", 30),
+    year = rep(year, 30),
+    month = rep(7, 30),
+    sex_en = rep(NA, 30)
+  )
+  
+  # Append the new data to the new_individuals dataframe
+  new_individuals <- rbind(new_individuals, new_data)
+}
+
+# Combine the new individuals with the original zander dataset
+Perch1 <- rbind(Perch1, new_individuals)
+
+# Creating new column with binomial maturity data (0 - Immature, 1 - Mature)
+Perch1 <- Perch1 %>%
+  mutate(maturity = as.factor(ifelse(gonad_stage < 3, 0, 1)))
+
+Perch1 <- Perch1 |>
+  drop_na(year) |>
+  mutate(year = factor(year, levels = sort(unique(year))))
+
+glm3 <- glm(maturity ~ total_length * year, data = Perch1, family=binomial)
+
+car::Anova(glm3)
+coef(glm3)
+summary(glm3)
+bcL3 <- car::Boot(glm3)
+
+L50.51p = apply(bcL3$t[,1:2], 1, lrPerc, p = 0.5)
+L50.66p = apply(bcL3$t[,1:2] + bcL3$t[,c(3, 18)], 1, lrPerc, p = 0.5)
+L50.67p = apply(bcL3$t[,1:2] + bcL3$t[,c(4, 19)], 1, lrPerc, p = 0.5)
+L50.68p = apply(bcL3$t[,1:2] + bcL3$t[,c(5, 20)], 1, lrPerc, p = 0.5)
+L50.73p = apply(bcL3$t[,1:2] + bcL3$t[,c(6, 21)], 1, lrPerc, p = 0.5)
+L50.76p = apply(bcL3$t[,1:2] + bcL3$t[,c(7, 22)], 1, lrPerc, p = 0.5)
+L50.77p = apply(bcL3$t[,1:2] + bcL3$t[,c(8, 23)], 1, lrPerc, p = 0.5)
+L50.78p = apply(bcL3$t[,1:2] + bcL3$t[,c(9, 24)], 1, lrPerc, p = 0.5)
+L50.79p = apply(bcL3$t[,1:2] + bcL3$t[,c(10, 25)], 1, lrPerc, p = 0.5)
+L50.81p = apply(bcL3$t[,1:2] + bcL3$t[,c(11, 26)], 1, lrPerc, p = 0.5)
+L50.90p = apply(bcL3$t[,1:2] + bcL3$t[,c(12, 27)], 1, lrPerc, p = 0.5)
+L50.91p = apply(bcL3$t[,1:2] + bcL3$t[,c(13, 28)], 1, lrPerc, p = 0.5)
+L50.09p = apply(bcL3$t[,1:2] + bcL3$t[,c(14, 29)], 1, lrPerc, p = 0.5)
+L50.13p = apply(bcL3$t[,1:2] + bcL3$t[,c(15, 30)], 1, lrPerc, p = 0.5)
+L50.14p = apply(bcL3$t[,1:2] + bcL3$t[,c(16, 31)], 1, lrPerc, p = 0.5)
+L50.15p = apply(bcL3$t[,1:2] + bcL3$t[,c(17, 32)], 1, lrPerc, p = 0.5)
+
+( ci.L50.51p <-  quantile(L50.51p,c(0.025,0.975)) )
+( ci.L50.66p <-  quantile(L50.66p,c(0.025,0.975)) )
+( ci.L50.67p <-  quantile(L50.67p,c(0.025,0.975)) )
+( ci.L50.68p <-  quantile(L50.68p,c(0.025,0.975)) )
+( ci.L50.73p <-  quantile(L50.73p,c(0.025,0.975)) )
+( ci.L50.76p <-  quantile(L50.76p,c(0.025,0.975)) )
+( ci.L50.77p <-  quantile(L50.77p,c(0.025,0.975)) )
+( ci.L50.78p <-  quantile(L50.78p,c(0.025,0.975)) )
+( ci.L50.79p <-  quantile(L50.79p,c(0.025,0.975)) )
+( ci.L50.81p <-  quantile(L50.81p,c(0.025,0.975)) )
+( ci.L50.90p <-  quantile(L50.90p,c(0.025,0.975)) )
+( ci.L50.91p <-  quantile(L50.91p,c(0.025,0.975)) )
+( ci.L50.09p <-  quantile(L50.09p,c(0.025,0.975)) )
+( ci.L50.13p <-  quantile(L50.13p,c(0.025,0.975)) )
+( ci.L50.14p <-  quantile(L50.14p,c(0.025,0.975)) )
+( ci.L50.15p <-  quantile(L50.15p,c(0.025,0.975)) )
+
+# Maturity size -α/βi
+predicted_L50.51p <- -(coef(glm3)[1] / coef(glm3)[2])
+predicted_L50.66p <- -((coef(glm3)[1] + coef(glm3)[3]) / (coef(glm3)[2] + coef(glm3)[18]))
+predicted_L50.67p <- -((coef(glm3)[1] + coef(glm3)[4]) / (coef(glm3)[2] + coef(glm3)[19]))
+predicted_L50.68p <- -((coef(glm3)[1] + coef(glm3)[5]) / (coef(glm3)[2] + coef(glm3)[20]))
+predicted_L50.73p <- -((coef(glm3)[1] + coef(glm3)[6]) / (coef(glm3)[2] + coef(glm3)[21]))
+predicted_L50.76p <- -((coef(glm3)[1] + coef(glm3)[7]) / (coef(glm3)[2] + coef(glm3)[22]))
+predicted_L50.77p <- -((coef(glm3)[1] + coef(glm3)[8]) / (coef(glm3)[2] + coef(glm3)[23]))
+predicted_L50.78p <- -((coef(glm3)[1] + coef(glm3)[9]) / (coef(glm3)[2] + coef(glm3)[24]))
+predicted_L50.79p <- -((coef(glm3)[1] + coef(glm3)[10]) / (coef(glm3)[2] + coef(glm3)[25]))
+predicted_L50.81p <- -((coef(glm3)[1] + coef(glm3)[11]) / (coef(glm3)[2] + coef(glm3)[26]))
+predicted_L50.90p <- -((coef(glm3)[1] + coef(glm3)[12]) / (coef(glm3)[2] + coef(glm3)[27]))
+predicted_L50.91p <- -((coef(glm3)[1] + coef(glm3)[13]) / (coef(glm3)[2] + coef(glm3)[28]))
+predicted_L50.09p <- -((coef(glm3)[1] + coef(glm3)[14]) / (coef(glm3)[2] + coef(glm3)[29]))
+predicted_L50.13p <- -((coef(glm3)[1] + coef(glm3)[15]) / (coef(glm3)[2] + coef(glm3)[30]))
+predicted_L50.14p <- -((coef(glm3)[1] + coef(glm3)[16]) / (coef(glm3)[2] + coef(glm3)[31]))
+predicted_L50.15p <- -((coef(glm3)[1] + coef(glm3)[17]) / (coef(glm3)[2] + coef(glm3)[32]))
+
+```
+
+```{r}
+
+year <- c("1951", "1966", "1967", "1968", "1973", "1976", "1977", "1978", "1979", "1981", "1990", "1991", "2009", "2013", "2014", "2015")
+predicted_values <- c(predicted_L50.51p, predicted_L50.66p, predicted_L50.67p, predicted_L50.68p, predicted_L50.73p, predicted_L50.76p, predicted_L50.77p, predicted_L50.78p, predicted_L50.79p, predicted_L50.81p, predicted_L50.90p, predicted_L50.91p, predicted_L50.09p, predicted_L50.13p, predicted_L50.14p, predicted_L50.15p)
+
+lower_ci <- c(ci.L50.51p[1], ci.L50.66p[1], ci.L50.67p[1], ci.L50.68p[1], ci.L50.73p[1], ci.L50.76p[1], ci.L50.77p[1], ci.L50.78p[1], ci.L50.79p[1], ci.L50.81p[1], ci.L50.90p[1], ci.L50.91p[1], ci.L50.09p[1], ci.L50.13p[1], ci.L50.14p[1], ci.L50.15p[1])
+
+upper_ci <- c(ci.L50.51p[2], ci.L50.66p[2], ci.L50.67p[2], ci.L50.68p[2], ci.L50.73p[2], ci.L50.76p[2], ci.L50.77p[2], ci.L50.78p[2], ci.L50.79p[2], ci.L50.81p[2], ci.L50.90p[2], ci.L50.91p[2], ci.L50.09p[2], ci.L50.13p[2], ci.L50.14p[2], ci.L50.15p[2])
+
+perchMatSize <- data.frame(year, predicted_values, lower_ci, upper_ci)
+
+# Create a data frame with predicted L50 values
+predicted_labels <- data.frame(year, predicted_values)
+
+# Plot
+ggplot(perchMatSize, aes(x = year, y = predicted_values)) +
+  geom_point(size = 2, color = "black") +
+  geom_errorbar(aes(ymin = lower_ci, ymax = upper_ci), width = 0.05, color = "black", size = 1) +
+  geom_text(data = predicted_labels, aes(label = round(predicted_values, 1)), hjust = 1.2, vjust = -0.5, size = 4) +
+  labs(title = "Perch Changes of L50 with Confidence Intervals",
+       x = "Year",
+       y = "Predicted L50") +
+  ylim(0, 40) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(size = 12, angle = 45, hjust = 1),  # Increase size of x-axis text
+        axis.text.y = element_text(size = 15),  # Increase size of y-axis text
+        axis.title = element_text(size = 15),   # Increase size of axis titles
+        plot.title = element_text(size = 16))   # Increase size of plot title
+```
+
+Tables to see number of observations and main statiscis
+
+```{r}
+Perch1_table2 <- Perch1 %>%
+  group_by(year, maturity) %>%
+  summarise(
+    mean_total_length = mean(total_length),
+    median_total_length = median(total_length),
+    min_total_length = min(total_length),
+    max_total_length = max(total_length), count_observation = n())
+```
+
+```{r}
+Perch1_1 <- Perch1 %>%
+  group_by(year) %>%
+  summarise(
+    mean_total_length = mean(total_length),
+    median_total_length = median(total_length),
+    min_total_length = min(total_length),
+    max_total_length = max(total_length), count_observation = n())
+
+```
+
+## Perch trend test
+
+```{r}
+#Use 'str' to inspect the data frame 
+str(perchMatSize, vec.len = 2)
+perchMatSize$year <- as.numeric(perchMatSize$year)
+# Remove rows where predicted_values are higher than 50 or lower than 1
+perchMat <- perchMatSize %>% filter(predicted_values <= 50 & predicted_values >= 1)
+perchMat <- slice(perchMat, -12)
+
+# library(Kendall)
+AB2 <- select(perchMat, predicted_values)
+ABtimeseries <- ts(AB2)
+#Plot the time series data
+plot(ABtimeseries)
+#Add a smooth line to visualize the trend 
+lines(lowess(time(ABtimeseries),ABtimeseries), col='red')
+
+# Kendall's Nonparametric Test for Montonic Trend
+# library(EnvStats)
+kendallTrendTest(predicted_values ~ year, data = perchMat)
+# There is a significant negative trend in the data
+# (i.e. size at maturity has significantly declined since 1950)
+```
+
+```{r}
+# Weighted regression
+# Fit a Gaussian LM
+gaus1 <- lm(predicted_values ~ year, data = perchMat)
+
+# Extract weights for each year based on model residuals
+weighting <- 1 / lm(abs(gaus1$residuals) ~ gaus1$fitted.values)$fitted.values^2
+
+# Fit a weighted Gaussian LM
+wt_gaus1 <- lm(predicted_values ~ year, 
+                                  weights = weighting,
+                                  data = perchMat)
+
+#Model output
+summary(wt_gaus1)
+
+#              Estimate Std. Error t value Pr(>|t|)    
+# (Intercept) 494.90797  150.87262    3.28  0.00733 **
+# year         -0.23828    0.07589   -3.14  0.00941 ** 
+
+base_plot <- plot_model(wt_gaus1, type = "pred", 
+           terms = c("year"),
+           colors = c("black"),
+           show.data = TRUE,
+           title = "Perch", 
+           jitter = 0.1,
+           axis.title = c("Year",
+                          "Length at maturity (cm)"),
+           show.legend = FALSE, dot.size = 1.5)
+
+# Significant negative relationship
+p_value <- 0.044
+# Extract the plot data from plot_model
+plot_data <- base_plot$data
+# Combine plot data with perchMat for matching
+combined_data <- merge(plot_data, perchMat, by.x = "x", by.y = "year")
+# Add confidence intervals and customize the plot
+p <- base_plot +
+  geom_errorbar(data = combined_data, aes(x = x, ymin = lower_ci, ymax = upper_ci), width = 0.3, size = 0.5, color = "black", alpha = 0.6) +
+  annotate("text", x = Inf, y = Inf, label = paste0("p = ", format(p_value, digits = 4)), 
+           hjust = 1.2, vjust = 2, size = 5) +
+  My_theme
+
+# Print the final plot
+print(p)
+```
+
+Accounting for uncertainty in each annual estimate of length at 50% maturity for all predicted L50 values 
+
+```{r}
+# Creating random samples of size at maturity for every year based on the range of the 95% confidence intervals
+Y1951 <- runif(100, min=perchMat[1,3], max=perchMat[1,4])
+Y1966 <- runif(100, min=perchMat[2,3], max=perchMat[2,4])
+Y1967 <- runif(100, min=perchMat[3,3], max=perchMat[3,4])
+Y1968 <- runif(100, min=perchMat[4,3], max=perchMat[4,4])
+Y1976 <- runif(100, min=perchMat[5,3], max=perchMat[5,4])
+Y1977 <- runif(100, min=perchMat[6,3], max=perchMat[6,4])
+Y1978 <- runif(100, min=perchMat[7,3], max=perchMat[7,4])
+Y1979 <- runif(100, min=perchMat[8,3], max=perchMat[8,4])
+Y1981 <- runif(100, min=perchMat[9,3], max=perchMat[9,4])
+Y1990 <- runif(100, min=perchMat[10,3], max=perchMat[10,4])
+Y1991 <- runif(100, min=perchMat[11,3], max=perchMat[11,4])
+Y2014 <- runif(100, min=perchMat[12,3], max=perchMat[12,4])
+Y2015 <- runif(100, min=perchMat[13,3], max=perchMat[13,4])
+
+# Combine the vectors into a data frame
+data <- data.frame(Y1951, Y1966, Y1967, Y1968, Y1976, Y1977, Y1978, Y1979, Y1981, Y1990, Y1991, Y2014, Y2015)
+
+# Reshape data from wide to long format
+data_long <- reshape2::melt(data, variable.name = "year", value.name = "predicted_values")
+
+# Convert year to numeric
+data_long$year <- as.numeric(gsub("Y", "", data_long$year))
+
+```
+
+```{r}
+
+data_long <- data_long %>%
+  left_join(perchMat, by = c("year" = "year"))
+
+# Initialize a data frame to store the extracted results
+results_df <- data.frame(
+  tau = numeric(100),
+  z = numeric(100),
+  p_value = numeric(100),
+  intercept = numeric(100),
+  slope = numeric(100),
+  simulation = numeric(100)
+)
+
+# List to store sampled data with predictions for plotting
+sampled_data_list <- list()
+
+# Loop to run kendallTrendTest and linear model fitting 100 times
+for (i in 1:100) {
+  # Sample one predicted value for each year
+  sampled_data <- data_long %>%
+    group_by(year) %>%
+    sample_n(1) %>%
+    ungroup()
+  
+  # Run the Kendall trend test on the sampled data
+  kendall_result <- kendallTrendTest(predicted_values.x ~ year, data = sampled_data)
+  
+  # Extract the Kendall trend test parameters
+  tau <- kendall_result$estimate[1]
+  z <- kendall_result$statistic
+  p_value <- kendall_result$p.value
+  
+  # Fit a linear model to the sampled data
+  lm_model <- lm(predicted_values.x ~ year, data = sampled_data)
+  
+  # Extract the intercept and slope from the linear model
+  intercept <- coef(lm_model)[1]
+  slope <- coef(lm_model)[2]
+  
+  # Store the extracted parameters in the data frame
+  results_df$tau[i] <- tau
+  results_df$z[i] <- z
+  results_df$p_value[i] <- p_value
+  results_df$intercept[i] <- intercept
+  results_df$slope[i] <- slope
+  results_df$simulation[i] <- i 
+  
+  # Add predictions to the sampled data for plotting
+  sampled_data <- sampled_data %>%
+    mutate(predicted = predict(lm_model),
+           simulation = i)
+  
+  # Store the sampled data
+  sampled_data_list[[i]] <- sampled_data
+}
+
+# Combine all sampled data into one data frame for plotting
+combined_sampled_data <- bind_rows(sampled_data_list)
+
+# Display the results
+print(results_df)
+
+# Calculate the percentage of significant p-values (e.g., p < 0.05)
+significance_level <- 0.05
+significant_p_values <- sum(results_df$p_value < significance_level)
+
+# Print the percentage of significant p-values
+cat("Percentage of significant p-values (p <", significance_level, "):", significant_p_values, "%\n")
+
+median(results_df[,1])
+
+# Merge results_df with combined_sampled_data
+combined_sampled_data <- combined_sampled_data %>%
+  left_join(results_df, by = "simulation")
+
+# Plot the 100 different lines to show the trend
+lmp <- ggplot(combined_sampled_data, aes(x = year, y = predicted_values.x, group = simulation)) +
+  geom_ribbon(aes(ymin = lower_ci, ymax = upper_ci), alpha = 0.6, fill = "#ececec") +
+ geom_line(aes(y = predicted, color = p_value < 0.05), alpha = 0.3) +
+  scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black"), guide = FALSE) +
+  geom_point(alpha = 0.1) +
+  labs(title = "Perch", x = "Year", y = "Predicted L50") +
+annotate("text", x = max(combined_sampled_data$year), y = min(combined_sampled_data$predicted_values.x), label = paste0("p < ", significance_level, " in ", significant_p_values, "%"), hjust = 1, vjust = -18, size = 5, color = "black") +
+   My_theme
+```
+
+
+#### Sander
+
+```{r}
+zander <- L50data %>% filter (spp_name_lt=="Starkis") %>% select(spp_name_lt, total_length, gonad_stage, year, month, sex_en) %>% filter(month == 6 | month == 7 | month == 8)
+
+# Adding gonad stage 1 to smallest individuals which total length less than 15 and which has no gonad stage data.
+zander <- zander %>% mutate(gonad_stage = ifelse(is.na(gonad_stage) & total_length < 10, "1", gonad_stage), gonad_stage = ifelse(gonad_stage == "2" & total_length > 50, NA, gonad_stage)) %>% drop_na(gonad_stage) %>% drop_na(total_length)
+
+table(zander$year)
+```
+
+
+Removing outliers
+```{r}
+# Create box plot to see outliers
+boxplot(zander$total_length ~ zander$gonad_stage, xlab = "Gonad stage", ylab = "Length (cm)")
+
+# no obvious outliers
+
+# Identify the outliers based on the box plot
+# outliers <- boxplot(zander$total_length ~ zander$gonad_stage, plot = FALSE)$out
+# Remove outliers from the dataset
+# zander <- zander[!(zander$total_length %in% outliers), ]
+```
+
+L50 for different years
+
+```{r}
+# Calculate the number of observations per year in zander
+year_counts_zander <- zander %>%
+  group_by(year) %>%
+  summarise(n = n())
+
+# Filter the zander dataset to include only years with more than 15 observations
+zander <- zander %>%
+  inner_join(year_counts_zander, by = "year") %>%
+  filter(n > 10) %>%
+  select(-n)
+
+# Find unique years in the zander dataset
+unique_years <- unique(zander$year)
+
+# Create an empty dataframe to store the fictitious individuals
+new_individuals <- data.frame()
+
+# Loop through each unique year
+for (year in unique_years) {
+  # Generate 30 fictitious individuals for the current year
+  new_data <- data.frame(
+    spp_name_lt = rep("Starkis", 30),
+    total_length = runif(30, min = 1, max = 15),
+    gonad_stage = rep("1", 30),
+    year = rep(year, 30),
+    month = rep(7, 30),
+    sex_en = rep(NA, 30)
+  )
+  
+  # Append the new data to the new_individuals dataframe
+  new_individuals <- rbind(new_individuals, new_data)
+}
+
+# Combine the new individuals with the original zander dataset
+zander <- rbind(zander, new_individuals)
+
+# Creating new column with binomial maturity data (0 - Immature, 1 - Mature)
+zander <- zander %>%
+  mutate(maturity = as.factor(ifelse(gonad_stage < 3, 0, 1)))
+
+zander <- zander |>
+  drop_na(year) |>
+  mutate(year = factor(year, levels = sort(unique(year))))
+
+glm3 <- glm(maturity ~ total_length * year, data = zander, family=binomial)
+
+car::Anova(glm3)
+coef(glm3)
+summary(glm3)
+bcL3 <- car::Boot(glm3)
+
+L50.51s = apply(bcL3$t[,1:2], 1, lrPerc, p = 0.5)
+L50.60s = apply(bcL3$t[,1:2] + bcL3$t[,c(3, 19)], 1, lrPerc, p = 0.5)
+L50.66s = apply(bcL3$t[,1:2] + bcL3$t[,c(4, 20)], 1, lrPerc, p = 0.5)
+L50.67s = apply(bcL3$t[,1:2] + bcL3$t[,c(5, 21)], 1, lrPerc, p = 0.5)
+L50.68s = apply(bcL3$t[,1:2] + bcL3$t[,c(6, 22)], 1, lrPerc, p = 0.5)
+L50.73s = apply(bcL3$t[,1:2] + bcL3$t[,c(7, 23)], 1, lrPerc, p = 0.5)
+L50.77s = apply(bcL3$t[,1:2] + bcL3$t[,c(8, 24)], 1, lrPerc, p = 0.5)
+L50.79s = apply(bcL3$t[,1:2] + bcL3$t[,c(9, 25)], 1, lrPerc, p = 0.5)
+L50.80s = apply(bcL3$t[,1:2] + bcL3$t[,c(10, 26)], 1, lrPerc, p = 0.5)
+L50.81s = apply(bcL3$t[,1:2] + bcL3$t[,c(11, 27)], 1, lrPerc, p = 0.5)
+L50.88s = apply(bcL3$t[,1:2] + bcL3$t[,c(12, 28)], 1, lrPerc, p = 0.5)
+L50.89s = apply(bcL3$t[,1:2] + bcL3$t[,c(13, 29)], 1, lrPerc, p = 0.5)
+L50.92s = apply(bcL3$t[,1:2] + bcL3$t[,c(14, 30)], 1, lrPerc, p = 0.5)
+L50.96s = apply(bcL3$t[,1:2] + bcL3$t[,c(15, 31)], 1, lrPerc, p = 0.5)
+L50.98s = apply(bcL3$t[,1:2] + bcL3$t[,c(16, 32)], 1, lrPerc, p = 0.5)
+L50.99s = apply(bcL3$t[,1:2] + bcL3$t[,c(17, 33)], 1, lrPerc, p = 0.5)
+L50.02s = apply(bcL3$t[,1:2] + bcL3$t[,c(18, 34)], 1, lrPerc, p = 0.5)
+
+( ci.L50.51s <-  quantile(L50.51s,c(0.025,0.975)) )
+( ci.L50.60s <-  quantile(L50.60s,c(0.025,0.975)) )
+( ci.L50.66s <-  quantile(L50.66s,c(0.025,0.975)) )
+( ci.L50.67s <-  quantile(L50.67s,c(0.025,0.975)) )
+( ci.L50.68s <-  quantile(L50.68s,c(0.025,0.975)) )
+( ci.L50.73s <-  quantile(L50.73s,c(0.025,0.975)) )
+( ci.L50.77s <-  quantile(L50.77s,c(0.025,0.975)) )
+( ci.L50.79s <-  quantile(L50.79s,c(0.025,0.975)) )
+( ci.L50.80s <-  quantile(L50.80s,c(0.025,0.975)) )
+( ci.L50.81s <-  quantile(L50.81s,c(0.025,0.975)) )
+( ci.L50.88s <-  quantile(L50.88s,c(0.025,0.975)) )
+( ci.L50.89s <-  quantile(L50.89s,c(0.025,0.975)) )
+( ci.L50.92s <-  quantile(L50.92s,c(0.025,0.975)) )
+( ci.L50.96s <-  quantile(L50.96s,c(0.025,0.975)) )
+( ci.L50.98s <-  quantile(L50.98s,c(0.025,0.975)) )
+( ci.L50.99s <-  quantile(L50.99s,c(0.025,0.975)) )
+( ci.L50.02s <-  quantile(L50.02s,c(0.025,0.975)) )
+
+# Maturity size -α/βi
+predicted_L50.51s <- -(coef(glm3)[1] / coef(glm3)[2])
+predicted_L50.60s <- -((coef(glm3)[1] + coef(glm3)[3]) / (coef(glm3)[2] + coef(glm3)[19]))
+predicted_L50.66s <- -((coef(glm3)[1] + coef(glm3)[4]) / (coef(glm3)[2] + coef(glm3)[20]))
+predicted_L50.67s <- -((coef(glm3)[1] + coef(glm3)[5]) / (coef(glm3)[2] + coef(glm3)[21]))
+predicted_L50.68s <- -((coef(glm3)[1] + coef(glm3)[6]) / (coef(glm3)[2] + coef(glm3)[22]))
+predicted_L50.73s <- -((coef(glm3)[1] + coef(glm3)[7]) / (coef(glm3)[2] + coef(glm3)[23]))
+predicted_L50.77s <- -((coef(glm3)[1] + coef(glm3)[8]) / (coef(glm3)[2] + coef(glm3)[24]))
+predicted_L50.79s <- -((coef(glm3)[1] + coef(glm3)[9]) / (coef(glm3)[2] + coef(glm3)[25]))
+predicted_L50.80s <- -((coef(glm3)[1] + coef(glm3)[10]) / (coef(glm3)[2] + coef(glm3)[26]))
+predicted_L50.81s <- -((coef(glm3)[1] + coef(glm3)[11]) / (coef(glm3)[2] + coef(glm3)[27]))
+predicted_L50.88s <- -((coef(glm3)[1] + coef(glm3)[12]) / (coef(glm3)[2] + coef(glm3)[28]))
+predicted_L50.89s <- -((coef(glm3)[1] + coef(glm3)[13]) / (coef(glm3)[2] + coef(glm3)[29]))
+predicted_L50.92s <- -((coef(glm3)[1] + coef(glm3)[14]) / (coef(glm3)[2] + coef(glm3)[30]))
+predicted_L50.96s <- -((coef(glm3)[1] + coef(glm3)[15]) / (coef(glm3)[2] + coef(glm3)[31]))
+predicted_L50.98s <- -((coef(glm3)[1] + coef(glm3)[16]) / (coef(glm3)[2] + coef(glm3)[32]))
+predicted_L50.99s <- -((coef(glm3)[1] + coef(glm3)[17]) / (coef(glm3)[2] + coef(glm3)[33]))
+predicted_L50.02s <- -((coef(glm3)[1] + coef(glm3)[18]) / (coef(glm3)[2] + coef(glm3)[34]))
+
+```
+
+```{r}
+
+year <- c("1951", "1960", "1966", "1967", "1968", "1973", "1977", "1979", "1980", "1981", "1988", "1989", "1992", "1996", "1998", "1999", "2002")
+predicted_values <- c(predicted_L50.51s, predicted_L50.60s, predicted_L50.66s, predicted_L50.67s, predicted_L50.68s, predicted_L50.73s, predicted_L50.77s, predicted_L50.79s, predicted_L50.80s, predicted_L50.81s, predicted_L50.88s, predicted_L50.89s, predicted_L50.92s, predicted_L50.96s, predicted_L50.98s, predicted_L50.99s, predicted_L50.02s)
+
+lower_ci <- c(ci.L50.51s[1], ci.L50.60s[1], ci.L50.66s[1], ci.L50.67s[1], ci.L50.68s[1], ci.L50.73s[1], ci.L50.77s[1], ci.L50.79s[1], ci.L50.80s[1], ci.L50.81s[1], ci.L50.88s[1], ci.L50.89s[1], ci.L50.92s[1], ci.L50.96s[1], ci.L50.98s[1], ci.L50.99s[1], ci.L50.02s[1])
+
+upper_ci <- c(ci.L50.51s[2], ci.L50.60s[2], ci.L50.66s[2], ci.L50.67s[2], ci.L50.68s[2], ci.L50.73s[2], ci.L50.77s[2], ci.L50.79s[2], ci.L50.80s[2], ci.L50.81s[2], ci.L50.88s[2], ci.L50.89s[2], ci.L50.92s[2], ci.L50.96s[2], ci.L50.98s[2], ci.L50.99s[2], ci.L50.02s[2])
+
+sanderMatSize <- data.frame(year, predicted_values, lower_ci, upper_ci)
+
+# Create a data frame with predicted L50 values
+predicted_labels <- data.frame(year, predicted_values)
+
+# Plot
+ggplot(sanderMatSize, aes(x = year, y = predicted_values)) +
+  geom_point(size = 2, color = "black") +
+  geom_errorbar(aes(ymin = lower_ci, ymax = upper_ci), width = 0.05, color = "black", size = 1) +
+  geom_text(data = predicted_labels, aes(label = round(predicted_values, 1)), hjust = 1.2, vjust = -0.5, size = 4) +
+  geom_smooth(method = "loess", color = "blue", size = 1, se = FALSE) +
+  labs(title = "Pikeperch Changes of L50 with Confidence Intervals",
+       x = "Year",
+       y = "Predicted L50") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(size = 12, angle = 45, hjust = 1),  # Increase size of x-axis text
+        axis.text.y = element_text(size = 15),  # Increase size of y-axis text
+        axis.title = element_text(size = 15),   # Increase size of axis titles
+        plot.title = element_text(size = 16))   # Increase size of plot title
+```
+
+
+
+Tables to see number of observations and main statiscis
+
+```{r}
+zander_table2 <- zander %>%
+  group_by(year, maturity) %>%
+  summarise(
+    mean_total_length = mean(total_length),
+    median_total_length = median(total_length),
+    min_total_length = min(total_length),
+    max_total_length = max(total_length), count_observation = n())
+```
+
+```{r}
+zander_1 <- zander %>%
+  group_by(year) %>%
+  summarise(
+    mean_total_length = mean(total_length),
+    median_total_length = median(total_length),
+    min_total_length = min(total_length),
+    max_total_length = max(total_length), count_observation = n())
+
+```
+
+## Sander trend test
+
+```{r}
+# Remove rows where predicted_values are higher than 100 or lower than 1
+sanderMat <- sanderMatSize %>% filter(predicted_values <= 100 & predicted_values >= 1)
+# Remove values with negative ci
+sanderMat <- slice(sanderMat, -4, -11, -15)
+
+library(Kendall)
+sanderMat2 <- select(sanderMat, predicted_values)
+ABtimeseries <- ts(sanderMat2)
+#Plot the time series data
+plot(ABtimeseries)
+#Add a smooth line to visualize the trend 
+lines(lowess(time(ABtimeseries),ABtimeseries), col='red')
+
+# Kendall's Nonparametric Test for Montonic Trend
+library(EnvStats)
+sanderMat$year <- as.numeric(sanderMat$year)
+kendallTrendTest(predicted_values ~ year, data = sanderMat)
+# tau =  -0.5151515
+# z = -2.262894
+# P-value: 0.02364222
+
+# There is a significant negative trend in the data
+# (i.e. size at maturity has significantly declined since 1950)
+```
+
+```{r}
+# Weighted regression
+# Fit a Gaussian LM
+gaus1 <- lm(predicted_values ~ year, data = sanderMat)
+
+# Extract weights for each year based on model residuals
+weighting <- 1 / lm(abs(gaus1$residuals) ~ gaus1$fitted.values)$fitted.values^2
+
+# Fit a weighted Gaussian LM
+wt_gaus1 <- lm(predicted_values ~ year, 
+                                  weights = weighting,
+                                  data = sanderMat)
+
+#Model output
+summary(wt_gaus1)
+
+#              Estimate Std. Error t value Pr(>|t|)    
+# (Intercept) 997.0718   236.6678   4.213  0.00179 **
+# year         -0.4826     0.1191  -4.053  0.00231 **
+
+# negative relationship
+p_value <- 0.024
+# Plot model
+base_plot <- plot_model(wt_gaus1, type = "pred", 
+           terms = c("year"),
+           colors = c("black"),
+           show.data = TRUE,
+           title = "Pikeperch", 
+           jitter = 0.1,
+           axis.title = c("Year", "Size at maturity (cm)"),
+           show.legend = FALSE, dot.size = 1.5)
+
+# Extract the plot data from plot_model
+plot_data <- base_plot$data
+# Combine plot data with sanderMat for matching
+combined_data <- merge(plot_data, sanderMat, by.x = "x", by.y = "year")
+
+specific_years <- c(1960, 1980, 2000)
+
+# Add confidence intervals and customize the plot
+PP <- base_plot +
+  geom_errorbar(data = combined_data, aes(x = x, ymin = lower_ci, ymax = upper_ci), width = 0.3, size = 0.5, color = "black", alpha = 0.6) +
+  annotate("text", x = Inf, y = Inf, label = paste0("p = ", format(p_value, digits = 4)), 
+           hjust = 1.2, vjust = 2, size = 5)+ scale_x_continuous(breaks = specific_years) +
+  My_theme
+
+# Print the final plot
+print(PP)
+```
+
+Accounting for uncertainty in each annual estimate of length at 50% maturity for all predicted L50 values 
+
+```{r}
+
+# Creating random samples of size at maturity for every year based on the range of the 95% confidence intervals
+Y1951 <- runif(100, min=sanderMat[1,3], max=sanderMat[1,4])
+Y1960 <- runif(100, min=sanderMat[2,3], max=sanderMat[2,4])
+Y1968 <- runif(100, min=sanderMat[3,3], max=sanderMat[3,4])
+Y1977 <- runif(100, min=sanderMat[4,3], max=sanderMat[4,4])
+Y1979 <- runif(100, min=sanderMat[5,3], max=sanderMat[5,4])
+Y1980 <- runif(100, min=sanderMat[6,3], max=sanderMat[6,4])
+Y1981 <- runif(100, min=sanderMat[7,3], max=sanderMat[7,4])
+Y1988 <- runif(100, min=sanderMat[8,3], max=sanderMat[8,4])
+Y1989 <- runif(100, min=sanderMat[9,3], max=sanderMat[9,4])
+Y1996 <- runif(100, min=sanderMat[10,3], max=sanderMat[10,4])
+Y1998 <- runif(100, min=sanderMat[11,3], max=sanderMat[11,4])
+Y1999 <- runif(100, min=sanderMat[12,3], max=sanderMat[12,4])
+
+# Combine the vectors into a data frame
+data <- data.frame(Y1951, Y1960, Y1968, Y1977, Y1979, Y1980, Y1981, Y1988, Y1989, Y1996, Y1998, Y1999)
+
+# Reshape data from wide to long format
+data_long <- reshape2::melt(data, variable.name = "year", value.name = "predicted_values")
+
+# Convert year to numeric
+data_long$year <- as.numeric(gsub("Y", "", data_long$year))
+
+```
+
+```{r}
+data_long <- data_long %>%
+  left_join(sanderMat, by = c("year" = "year"))
+
+# Initialize a data frame to store the extracted results
+results_df <- data.frame(
+  tau = numeric(100),
+  z = numeric(100),
+  p_value = numeric(100),
+  intercept = numeric(100),
+  slope = numeric(100),
+  simulation = numeric(100)
+)
+
+# List to store sampled data with predictions for plotting
+sampled_data_list <- list()
+
+# Loop to run kendallTrendTest and linear model fitting 100 times
+for (i in 1:100) {
+  # Sample one predicted value for each year
+  sampled_data <- data_long %>%
+    group_by(year) %>%
+    sample_n(1) %>%
+    ungroup()
+  
+  # Run the Kendall trend test on the sampled data
+  kendall_result <- kendallTrendTest(predicted_values.x ~ year, data = sampled_data)
+  
+  # Extract the Kendall trend test parameters
+  tau <- kendall_result$estimate[1]
+  z <- kendall_result$statistic
+  p_value <- kendall_result$p.value
+  
+  # Fit a linear model to the sampled data
+  lm_model <- lm(predicted_values.x ~ year, data = sampled_data)
+  
+  # Extract the intercept and slope from the linear model
+  intercept <- coef(lm_model)[1]
+  slope <- coef(lm_model)[2]
+  
+  # Store the extracted parameters in the data frame
+  results_df$tau[i] <- tau
+  results_df$z[i] <- z
+  results_df$p_value[i] <- p_value
+  results_df$intercept[i] <- intercept
+  results_df$slope[i] <- slope
+  results_df$simulation[i] <- i 
+  
+  # Add predictions to the sampled data for plotting
+  sampled_data <- sampled_data %>%
+    mutate(predicted = predict(lm_model),
+           simulation = i)
+  
+  # Store the sampled data
+  sampled_data_list[[i]] <- sampled_data
+}
+
+# Combine all sampled data into one data frame for plotting
+combined_sampled_data <- bind_rows(sampled_data_list)
+
+# Display the results
+print(results_df)
+
+# Calculate the percentage of significant p-values (e.g., p < 0.05)
+significance_level <- 0.05
+significant_p_values <- sum(results_df$p_value < significance_level)
+
+# Print the percentage of significant p-values
+cat("Percentage of significant p-values (p <", significance_level, "):", significant_p_values, "%\n")
+
+# Merge results_df with combined_sampled_data
+combined_sampled_data <- combined_sampled_data %>%
+  left_join(results_df, by = "simulation")
+
+# Plot the 100 different lines to show the trend
+lmpp <- ggplot(combined_sampled_data, aes(x = year, y = predicted_values.x, group = simulation)) +
+  geom_ribbon(aes(ymin = lower_ci, ymax = upper_ci), alpha = 0.6, fill = "#ececec") +
+ geom_line(aes(y = predicted, color = p_value < 0.05), alpha = 0.3) +
+  scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black"), guide = FALSE) +
+  geom_point(alpha = 0.1) +
+  labs(title = "Pikeperch", x = "Year", y = "Predicted L50") + 
+annotate("text", x = max(combined_sampled_data$year), y = min(combined_sampled_data$predicted_values.x), label = paste0("p < ", significance_level, " in ", significant_p_values, "%"), hjust = 1, vjust = -18, size = 5, color = "black") + My_theme
+```
+
+
+### Common plot for trends
+
+```{r}
+# cowplot
+
+br <- br + labs(y = NULL, x = NULL)
+r <- r + labs(y = NULL, x = NULL)
+p <- p + labs(y = NULL, x = NULL)
+PP <- PP + labs(y = NULL, x = NULL) 
+
+# Combine the top plots without x-axis labels
+top_plots <- plot_grid(br, r, align = "v")
+
+# Combine the bottom plots with x-axis labels
+bottom_plots <- plot_grid(p, PP, align = "v")
+
+# Combine top and bottom plots into a single 2x2 grid
+combined_plots <- plot_grid(top_plots, bottom_plots, ncol = 1)
+
+# Create a common y-axis label
+y_label <- ggdraw() + draw_label("Length at 50% maturity (cm)", angle = 90, vjust = 0.5)
+
+# Create a common x-axis label
+x_label <- ggdraw() + draw_label("Year", vjust = 0.5)
+
+# Combine the y-axis label, combined plots, and x-axis label
+final_plot <- plot_grid(
+  y_label, combined_plots, ncol = 2, rel_widths = c(0.05, 1)
+)
+
+final_plot_with_x <- plot_grid(
+  final_plot, x_label, ncol = 1, rel_heights = c(1, 0.05)
+)
+
+# Print the final plot
+print(final_plot_with_x)
+
+```
+
+### Common plot CI
+
+```{r}
+PP <- lmpp + labs(y = NULL, x = NULL)
+p <- lmp + labs(y = NULL, x = NULL)
+br <- lmb + labs(y = NULL, x = NULL)
+r <- lmr + labs(y = NULL, x = NULL)
+
+# Combine the top plots without x-axis labels
+top_plots <- plot_grid(br, r, align = "v")
+
+# Combine the bottom plots with x-axis labels
+bottom_plots <- plot_grid(p, PP, align = "v")
+
+# Combine top and bottom plots into a single 2x2 grid
+combined_plots <- plot_grid(top_plots, bottom_plots, ncol = 1)
+
+# Create a common y-axis label
+y_label <- ggdraw() + draw_label("Length at 50% maturity (cm)", angle = 90, vjust = 0.5)
+
+# Create a common x-axis label
+x_label <- ggdraw() + draw_label("Year", vjust = 0.5)
+
+# Combine the y-axis label, combined plots, and x-axis label
+final_plot <- plot_grid(
+  y_label, combined_plots, ncol = 2, rel_widths = c(0.05, 1)
+)
+
+final_plot_with_x <- plot_grid(
+  final_plot, x_label, ncol = 1, rel_heights = c(1, 0.05)
+)
+
+# Print the final plot
+print(final_plot_with_x)
+```
