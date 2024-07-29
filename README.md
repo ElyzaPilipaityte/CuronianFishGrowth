@@ -1,6 +1,4 @@
-<<<<<<< HEAD
 
-=======
 ## Code and data for the publication: **Rapid declines in maturation age and variable growth responses to temperature in four fish species in a rapidly warming lagoon suggest that temperature size rule is unlikely to be universally observed**
 
 This is the code and supplementary material to the manuscript "Rapid declines in maturation age and variable growth responses to temperature in four fish species in a rapidly warming lagoon suggest that temperature size rule is unlikely to be universally observed" by Elyza Pilipaitytė, Eglė Jakubavičiūtė, Žilvinas Pūtys, Audrius Steponėnas, Asta Audzijonyte.
