@@ -6,4 +6,3 @@ This is the code and supplementary material to the manuscript "Rapid declines in
 For all information please contact [elyza.pilipaityte\@gamtc.lt](mailto:elyza.pilipaityte@gamtc.lt)
 
 The study is currently ongoing and has not been published yet. Please do not use the data and analysis without permission.
->>>>>>> d0eef75e0d61001b5274f77c0bd7d6701f336f85
