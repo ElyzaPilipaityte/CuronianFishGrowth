@@ -46,40 +46,28 @@ My_theme <- theme(
 #### Bream
 
 ```{r}
-Bream1 <- L50data %>% filter (spp_name_lt=="Karsis") %>% select(spp_name_lt, total_length, gonad_stage, year, month, sex_en) %>% filter(month == 6 | month == 7 | month == 8)
+Bream1 <- L50data %>% filter (spp_name_lt=="Karsis") 
 
-# Adding gonad stage 1 to smallest individuals which total length less than 20 and which has no gonad stage data.
+# Adding gonad stage 1 to smallest individuals which total length less than 10 and which has no gonad stage data.
 Bream1 <- Bream1 %>% mutate(gonad_stage = ifelse(is.na(gonad_stage) & total_length < 10, "1", gonad_stage), gonad_stage = ifelse(gonad_stage == "2" & total_length > 50, NA, gonad_stage)) %>% drop_na(gonad_stage) %>% drop_na(total_length)
-
-ggplot(Bream1, aes(gonad_stage, total_length, color = as.factor(year))) +
-  geom_point(size = 3, position = "jitter", alpha = 1/2)
-table(Bream1$year)
-table(Bream1$gonad_stage)
 ```
 
-Removing outliers
-```{r}
-# Create box plot to see outliers
-boxplot(Bream1$total_length ~ Bream1$gonad_stage, xlab = "Gonad stage", ylab = "Length (cm)")
-
-```
-
-All different years
+Length at maturity counts for different years
 
 ```{r}
 
-# Calculate the number of observations per year in zander
+# Calculate the number of observations per year
 year_counts_Bream1 <- Bream1 %>%
   group_by(year) %>%
   summarise(n = n())
 
-# Filter the zander dataset to include only years with more than 15 observations
+# Filter the dataset to include only years with more than 10 observations
 Bream1 <- Bream1 %>%
   inner_join(year_counts_Bream1, by = "year") %>%
   filter(n > 10) %>%
   select(-n)
 
-# Find unique years in the zander dataset
+# Find unique years in the dataset
 unique_years <- unique(Bream1$year)
 
 # Create an empty dataframe to store the fictitious individuals
@@ -101,7 +89,7 @@ for (year in unique_years) {
   new_individuals <- rbind(new_individuals, new_data)
 }
 
-# Combine the new individuals with the original zander dataset
+# Combine the new individuals with the original dataset
 Bream1 <- rbind(Bream1, new_individuals)
 
 # Creating new column with binomial maturity data (0 - Immature, 1 - Mature)
@@ -225,24 +213,6 @@ upper_ci <- c(ci.L50.50s[2], ci.L50.51s[2], ci.L50.57s[2], ci.L50.58s[2], ci.L50
 
 breamMatSize <- data.frame(year, predicted_values, lower_ci, upper_ci)
 
-# Create a data frame with predicted L50 values
-predicted_labels <- data.frame(year, predicted_values)
-
-# Plot
-ggplot(breamMatSize, aes(x = year, y = predicted_values)) +
-  geom_point(size = 2, color = "black") +
-  geom_errorbar(aes(ymin = lower_ci, ymax = upper_ci), width = 0.05, color = "black", size = 1) +
-  geom_text(data = predicted_labels, aes(label = round(predicted_values, 1)), hjust = 1.2, vjust = -0.5, size = 4) +
-  geom_smooth(method = "loess", color = "blue", size = 1, se = FALSE) +
-  labs(title = "Bream Changes of L50 with Confidence Intervals",
-       x = "Year",
-       y = "Predicted L50") +
-  ylim(15, 45) +
-  theme_minimal() +
-  theme(axis.text.x = element_text(size = 12, angle = 45, hjust = 1),  # Increase size of x-axis text
-        axis.text.y = element_text(size = 15),  # Increase size of y-axis text
-        axis.title = element_text(size = 15),   # Increase size of axis titles
-        plot.title = element_text(size = 16))   # Increase size of plot title
 ```
 
 Table with number of observations and main statistics
@@ -263,9 +233,12 @@ br_table <- Bream1 %>%
 ## Bream trend test
 
 ```{r}
+table(breamMatSize$year)
 str(breamMatSize, vec.len = 2)
 breamMatSize$year <- as.numeric(breamMatSize$year)
-breamMat <- breamMatSize %>% filter(predicted_values >= 0 & predicted_values <= 50)
+
+# removing years which have no mature fish data (1957, 1958, 1962 and 1951 have only 6 fish in 4-6 gonad stage which are making predicted L50 too high and unreliable).
+breamMat <- slice(breamMatSize, -2, -3, -4, -7)
 
 breamMat2 <- dplyr::select(breamMat, predicted_values)
 ABtimeseries <- ts(breamMat2)
@@ -341,36 +314,35 @@ Accounting for uncertainty in each annual estimate of length at 50% maturity
 ```{r}
 # Creating random samples of size at maturity for every year based on the range of the 95% confidence intervals
 Y1950 <- runif(100, min=breamMat[1,3], max=breamMat[1,4])
-Y1951 <- runif(100, min=breamMat[2,3], max=breamMat[2,4])
-Y1959 <- runif(100, min=breamMat[3,3], max=breamMat[3,4])
-Y1960 <- runif(100, min=breamMat[4,3], max=breamMat[4,4])
-Y1966 <- runif(100, min=breamMat[5,3], max=breamMat[5,4])
-Y1967 <- runif(100, min=breamMat[6,3], max=breamMat[6,4])
-Y1968 <- runif(100, min=breamMat[7,3], max=breamMat[7,4])
-Y1973 <- runif(100, min=breamMat[8,3], max=breamMat[8,4])
-Y1974 <- runif(100, min=breamMat[9,3], max=breamMat[9,4])
-Y1975 <- runif(100, min=breamMat[10,3], max=breamMat[10,4])
-Y1976 <- runif(100, min=breamMat[11,3], max=breamMat[11,4])
-Y1977 <- runif(100, min=breamMat[12,3], max=breamMat[12,4])
-Y1978 <- runif(100, min=breamMat[13,3], max=breamMat[13,4])
-Y1979 <- runif(100, min=breamMat[14,3], max=breamMat[14,4])
-Y1984 <- runif(100, min=breamMat[15,3], max=breamMat[15,4])
-Y1987 <- runif(100, min=breamMat[16,3], max=breamMat[16,4])
-Y1988 <- runif(100, min=breamMat[17,3], max=breamMat[17,4])
-Y1989 <- runif(100, min=breamMat[18,3], max=breamMat[18,4])
-Y1990 <- runif(100, min=breamMat[19,3], max=breamMat[19,4])
-Y1991 <- runif(100, min=breamMat[20,3], max=breamMat[20,4])
-Y1992 <- runif(100, min=breamMat[21,3], max=breamMat[21,4])
-Y1993 <- runif(100, min=breamMat[22,3], max=breamMat[22,4])
-Y1995 <- runif(100, min=breamMat[23,3], max=breamMat[23,4])
-Y1998 <- runif(100, min=breamMat[24,3], max=breamMat[24,4])
-Y1999 <- runif(100, min=breamMat[25,3], max=breamMat[25,4])
-Y2004 <- runif(100, min=breamMat[26,3], max=breamMat[26,4])
-Y2006 <- runif(100, min=breamMat[27,3], max=breamMat[27,4])
+Y1959 <- runif(100, min=breamMat[2,3], max=breamMat[2,4])
+Y1960 <- runif(100, min=breamMat[3,3], max=breamMat[3,4])
+Y1966 <- runif(100, min=breamMat[4,3], max=breamMat[4,4])
+Y1967 <- runif(100, min=breamMat[5,3], max=breamMat[5,4])
+Y1968 <- runif(100, min=breamMat[6,3], max=breamMat[6,4])
+Y1973 <- runif(100, min=breamMat[7,3], max=breamMat[7,4])
+Y1974 <- runif(100, min=breamMat[8,3], max=breamMat[8,4])
+Y1975 <- runif(100, min=breamMat[9,3], max=breamMat[9,4])
+Y1976 <- runif(100, min=breamMat[10,3], max=breamMat[10,4])
+Y1977 <- runif(100, min=breamMat[11,3], max=breamMat[11,4])
+Y1978 <- runif(100, min=breamMat[12,3], max=breamMat[12,4])
+Y1979 <- runif(100, min=breamMat[13,3], max=breamMat[13,4])
+Y1984 <- runif(100, min=breamMat[14,3], max=breamMat[14,4])
+Y1987 <- runif(100, min=breamMat[15,3], max=breamMat[15,4])
+Y1988 <- runif(100, min=breamMat[16,3], max=breamMat[16,4])
+Y1989 <- runif(100, min=breamMat[17,3], max=breamMat[17,4])
+Y1990 <- runif(100, min=breamMat[18,3], max=breamMat[18,4])
+Y1991 <- runif(100, min=breamMat[19,3], max=breamMat[19,4])
+Y1992 <- runif(100, min=breamMat[20,3], max=breamMat[20,4])
+Y1993 <- runif(100, min=breamMat[21,3], max=breamMat[21,4])
+Y1995 <- runif(100, min=breamMat[22,3], max=breamMat[22,4])
+Y1998 <- runif(100, min=breamMat[23,3], max=breamMat[23,4])
+Y1999 <- runif(100, min=breamMat[24,3], max=breamMat[24,4])
+Y2004 <- runif(100, min=breamMat[25,3], max=breamMat[25,4])
+Y2006 <- runif(100, min=breamMat[26,3], max=breamMat[26,4])
 
 # Combine the vectors into a data frame
 data <- data.frame(
-  Y1950, Y1951, Y1959, Y1960, Y1966, Y1967, Y1968, Y1973, Y1974, Y1975, 
+  Y1950, Y1959, Y1960, Y1966, Y1967, Y1968, Y1973, Y1974, Y1975, 
   Y1976, Y1977, Y1978, Y1979, Y1984, Y1987, Y1988, Y1989, Y1990, Y1991, 
   Y1992, Y1993, Y1995, Y1998, Y1999, Y2004, Y2006)
 # Reshape data from wide to long format
@@ -452,33 +424,17 @@ lmb <- ggplot(combined_sampled_data, aes(x = year, y = predicted_values.x, group
   scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black"), guide = FALSE) +
   geom_point(alpha = 0.1) +
   labs(title = "Bream", x = "Year", y = "Predicted L50") +
-annotate("text", x = max(combined_sampled_data$year), y = min(combined_sampled_data$predicted_values.x), label = paste0("p < ", significance_level, " in ", significant_p_values, "%"), hjust = 1, vjust = -18, size = 5, color = "black") +
-  theme_minimal() + My_theme
+annotate("text", x = max(combined_sampled_data$year), y = min(combined_sampled_data$predicted_values.x), label = paste0("p < ", significance_level, " in ", significant_p_values, "%"), hjust = 1, vjust = -8, size = 5, color = "black") + expand_limits(y = 0) + My_theme
 ```
 
 
 #### Roach
 
 ```{r}
-Roach_mat <- L50data %>% filter (spp_name_lt=="Kuoja") %>% select(spp_name_lt, total_length, gonad_stage, year, month, sex_en) %>% filter(month == 6 | month == 7 | month == 8)
+Roach_mat <- L50data %>% filter (spp_name_lt=="Kuoja")
 
 # Adding gonad stage 1 to smallest individuals which total length less than 20 and which has no gonad stage data.
 Roach_mat <- Roach_mat %>% mutate(gonad_stage = ifelse(is.na(gonad_stage) & total_length < 5, "1", gonad_stage), gonad_stage = ifelse(gonad_stage == "2" & total_length > 30, NA, gonad_stage)) %>% drop_na(gonad_stage) %>% drop_na(total_length)
-
-table(Roach_mat$gonad_stage)
-table(Roach_mat$year)
-```
-
-
-Removing outliers
-```{r}
-# Create box plot to see outliers
-boxplot(Roach_mat$total_length ~ Roach_mat$gonad_stage, xlab = "Gonad stage", ylab = "Length (cm)")
-
-# Identify the outliers based on the box plot
-# outliers <- boxplot(Roach_mat$total_length ~ Roach_mat$gonad_stage, plot = FALSE)$out
-# Remove outliers from the dataset
-# Roach_mat <- Roach_mat[!(Roach_mat$total_length %in% outliers), ]
 ```
 
 All different years
@@ -596,24 +552,6 @@ upper_ci <- c(ci.L50.50s[2], ci.L50.59s[2], ci.L50.60s[2], ci.L50.62s[2], ci.L50
 
 roachMatSize <- data.frame(year, predicted_values, lower_ci, upper_ci)
 
-# Create a data frame with predicted L50 values
-predicted_labels <- data.frame(year, predicted_values)
-
-# Plot
-ggplot(roachMatSize, aes(x = year, y = predicted_values)) +
-  geom_point(size = 2, color = "black") +
-  geom_errorbar(aes(ymin = lower_ci, ymax = upper_ci), width = 0.05, color = "black", size = 1) +
-  geom_text(data = predicted_labels, aes(label = round(predicted_values, 1)), hjust = 1.2, vjust = -0.5, size = 4) +
-  geom_smooth(method = "loess", color = "blue", size = 1, se = FALSE) +
-  labs(title = "Roach Changes of L50 with Confidence Intervals",
-       x = "Year",
-       y = "Predicted L50") +
-  ylim(0, 50) +
-  theme_minimal() +
-  theme(axis.text.x = element_text(size = 12, angle = 45, hjust = 1),  # Increase size of x-axis text
-        axis.text.y = element_text(size = 15),  # Increase size of y-axis text
-        axis.title = element_text(size = 15),   # Increase size of axis titles
-        plot.title = element_text(size = 16))   # Increase size of plot title
 ```
 
 Tables with numbers of observations and main statistics
@@ -646,15 +584,8 @@ Roach_mat__1 <- Roach_mat %>%
 ```{r}
 str(roachMatSize, vec.len = 2)
 roachMatSize$year <- as.numeric(roachMatSize$year)
-# Remove rows where predicted_values are higher than 40 or lower than 0
-roachMat <- roachMatSize %>% filter(predicted_values <= 40 & predicted_values >= 1)
-
-roachMat2 <- select(roachMat, predicted_values)
-ABtimeseries <- ts(roachMat2)
-#Plot the time series data
-plot(ABtimeseries)
-#Add a smooth line to visualize the trend 
-lines(lowess(time(ABtimeseries),ABtimeseries), col='red')
+# Removing years where there is less than 2 mature fish (1962, 1973, 2013)
+roachMat <- slice(roachMatSize, -4, -7, -13)
 
 kendallTrendTest(predicted_values ~ year, data = roachMat)
 # tau =   -0.7272727
@@ -679,11 +610,11 @@ wt_gaus1 <- lm(predicted_values ~ year,
 summary(wt_gaus1)
 
 #              Estimate Std. Error t value Pr(>|t|)    
-# (Intercept) 403.9439    62.3780   6.476 7.11e-05 ***
-# year         -0.1931     0.0311  -6.210    1e-04 ***
+# (Intercept) 405.36733   63.50251   6.383    8e-05 ***
+# year         -0.19385    0.03168  -6.119 0.000113 ***
 
 # Significant negative relationship
-p_value <-  0.001
+p_value <-  0.0001
 
 base_plot <- plot_model(wt_gaus1, type = "pred", 
            terms = c("year"),
@@ -702,7 +633,7 @@ combined_data <- merge(plot_data, roachMat, by.x = "x", by.y = "year")
 r <- base_plot +
   geom_errorbar(data = combined_data, aes(x = x, ymin = lower_ci, ymax = upper_ci), width = 0.3, size = 0.5, color = "black", alpha = 0.6) +
   annotate("text", x = Inf, y = Inf, label = paste0("p = ", format(p_value, digits = 4)), 
-           hjust = 1.2, vjust = 2, size = 5) +
+           hjust = 1.2, vjust = 2, size = 5) + expand_limits(y = 0) +
   My_theme
 
 # Print the final plot
@@ -814,7 +745,7 @@ lmr <- ggplot(combined_sampled_data, aes(x = year, y = predicted_values.x, group
   scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black"), guide = FALSE) +
   geom_point(alpha = 0.1) +
   labs(title = "Roach", x = "Year", y = "Predicted L50") + 
-annotate("text", x = max(combined_sampled_data$year), y = min(combined_sampled_data$predicted_values.x), label = paste0("p < ", significance_level, " in ", significant_p_values, "%"), hjust = 1, vjust = -18, size = 5, color = "black") + My_theme
+annotate("text", x = max(combined_sampled_data$year), y = min(combined_sampled_data$predicted_values.x), label = paste0("p < ", significance_level, " in ", significant_p_values, "%"), hjust = 1, vjust = -9, size = 5, color = "black") + expand_limits(y = 0) + My_theme
 
 ```
 
@@ -822,24 +753,11 @@ annotate("text", x = max(combined_sampled_data$year), y = min(combined_sampled_d
 #### Perch
 
 ```{r}
-Perch1 <- L50data %>% filter (spp_name_lt=="Eserys") %>% select(spp_name_lt, total_length, gonad_stage, year, month, sex_en) %>% filter(month == 6 | month == 7 | month == 8)
+Perch1 <- L50data %>% filter (spp_name_lt=="Eserys")
 
 # Adding gonad stage 1 to smallest individuals which total length less than 10 and which has no gonad stage data.
 Perch1 <- Perch1 %>% mutate(gonad_stage = ifelse(is.na(gonad_stage) & total_length < 5, "1", gonad_stage), gonad_stage = ifelse(gonad_stage == "2" & total_length > 30, NA, gonad_stage)) %>% drop_na(gonad_stage) %>% drop_na(total_length)
 
-```
-
-Removing outliers
-```{r}
-# Create box plot to see outliers
-boxplot(Perch1$total_length ~ Perch1$gonad_stage, xlab = "Gonad stage", ylab = "Length (cm)")
-
-# no obvious outliers
-
-# Identify the outliers based on the box plot
-# outliers <- boxplot(Perch1$total_length ~ Perch1$gonad_stage, plot = FALSE)$out
-# Remove outliers from the dataset
-# Perch1 <- Perch1[!(Perch1$total_length %in% outliers), ]
 ```
 
 All different years
@@ -961,23 +879,6 @@ upper_ci <- c(ci.L50.51p[2], ci.L50.66p[2], ci.L50.67p[2], ci.L50.68p[2], ci.L50
 
 perchMatSize <- data.frame(year, predicted_values, lower_ci, upper_ci)
 
-# Create a data frame with predicted L50 values
-predicted_labels <- data.frame(year, predicted_values)
-
-# Plot
-ggplot(perchMatSize, aes(x = year, y = predicted_values)) +
-  geom_point(size = 2, color = "black") +
-  geom_errorbar(aes(ymin = lower_ci, ymax = upper_ci), width = 0.05, color = "black", size = 1) +
-  geom_text(data = predicted_labels, aes(label = round(predicted_values, 1)), hjust = 1.2, vjust = -0.5, size = 4) +
-  labs(title = "Perch Changes of L50 with Confidence Intervals",
-       x = "Year",
-       y = "Predicted L50") +
-  ylim(0, 40) +
-  theme_minimal() +
-  theme(axis.text.x = element_text(size = 12, angle = 45, hjust = 1),  # Increase size of x-axis text
-        axis.text.y = element_text(size = 15),  # Increase size of y-axis text
-        axis.title = element_text(size = 15),   # Increase size of axis titles
-        plot.title = element_text(size = 16))   # Increase size of plot title
 ```
 
 Tables to see number of observations and main statiscis
@@ -990,6 +891,9 @@ Perch1_table2 <- Perch1 %>%
     median_total_length = median(total_length),
     min_total_length = min(total_length),
     max_total_length = max(total_length), count_observation = n())
+
+Perch_table <- Perch1 %>%
+  count(maturity, year) %>% pivot_wider(names_from = maturity, values_from = n, values_fill = 0)
 ```
 
 ```{r}
@@ -1009,17 +913,8 @@ Perch1_1 <- Perch1 %>%
 #Use 'str' to inspect the data frame 
 str(perchMatSize, vec.len = 2)
 perchMatSize$year <- as.numeric(perchMatSize$year)
-# Remove rows where predicted_values are higher than 50 or lower than 1
-perchMat <- perchMatSize %>% filter(predicted_values <= 50 & predicted_values >= 1)
-perchMat <- slice(perchMat, -12)
-
-# library(Kendall)
-AB2 <- select(perchMat, predicted_values)
-ABtimeseries <- ts(AB2)
-#Plot the time series data
-plot(ABtimeseries)
-#Add a smooth line to visualize the trend 
-lines(lowess(time(ABtimeseries),ABtimeseries), col='red')
+# Excluding years (1973, 2009, 2013) which have 1 or less mature fish data
+perchMat <- slice(perchMatSize, -5, -13, -14)
 
 # Kendall's Nonparametric Test for Montonic Trend
 # library(EnvStats)
@@ -1045,8 +940,8 @@ wt_gaus1 <- lm(predicted_values ~ year,
 summary(wt_gaus1)
 
 #              Estimate Std. Error t value Pr(>|t|)    
-# (Intercept) 494.90797  150.87262    3.28  0.00733 **
-# year         -0.23828    0.07589   -3.14  0.00941 ** 
+# (Intercept) 497.60124  152.97395   3.253  0.00770 **
+# year         -0.23965    0.07696  -3.114  0.00985 **
 
 base_plot <- plot_model(wt_gaus1, type = "pred", 
            terms = c("year"),
@@ -1059,7 +954,7 @@ base_plot <- plot_model(wt_gaus1, type = "pred",
            show.legend = FALSE, dot.size = 1.5)
 
 # Significant negative relationship
-p_value <- 0.044
+p_value <- 0.010
 # Extract the plot data from plot_model
 plot_data <- base_plot$data
 # Combine plot data with perchMat for matching
@@ -1068,7 +963,7 @@ combined_data <- merge(plot_data, perchMat, by.x = "x", by.y = "year")
 p <- base_plot +
   geom_errorbar(data = combined_data, aes(x = x, ymin = lower_ci, ymax = upper_ci), width = 0.3, size = 0.5, color = "black", alpha = 0.6) +
   annotate("text", x = Inf, y = Inf, label = paste0("p = ", format(p_value, digits = 4)), 
-           hjust = 1.2, vjust = 2, size = 5) +
+           hjust = 1.2, vjust = 2, size = 5) + expand_limits(y = 0) +
   My_theme
 
 # Print the final plot
@@ -1188,7 +1083,7 @@ lmp <- ggplot(combined_sampled_data, aes(x = year, y = predicted_values.x, group
   scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black"), guide = FALSE) +
   geom_point(alpha = 0.1) +
   labs(title = "Perch", x = "Year", y = "Predicted L50") +
-annotate("text", x = max(combined_sampled_data$year), y = min(combined_sampled_data$predicted_values.x), label = paste0("p < ", significance_level, " in ", significant_p_values, "%"), hjust = 1, vjust = -18, size = 5, color = "black") +
+annotate("text", x = max(combined_sampled_data$year), y = min(combined_sampled_data$predicted_values.x), label = paste0("p < ", significance_level, " in ", significant_p_values, "%"), hjust = 1, vjust = -11, size = 5, color = "black") + expand_limits(y = 0) +
    My_theme
 ```
 
@@ -1196,26 +1091,12 @@ annotate("text", x = max(combined_sampled_data$year), y = min(combined_sampled_d
 #### Sander
 
 ```{r}
-zander <- L50data %>% filter (spp_name_lt=="Starkis") %>% select(spp_name_lt, total_length, gonad_stage, year, month, sex_en) %>% filter(month == 6 | month == 7 | month == 8)
+zander <- L50data %>% filter (spp_name_lt=="Starkis")
 
-# Adding gonad stage 1 to smallest individuals which total length less than 15 and which has no gonad stage data.
+# Adding gonad stage 1 to smallest individuals which total length less than 10 and which has no gonad stage data.
 zander <- zander %>% mutate(gonad_stage = ifelse(is.na(gonad_stage) & total_length < 10, "1", gonad_stage), gonad_stage = ifelse(gonad_stage == "2" & total_length > 50, NA, gonad_stage)) %>% drop_na(gonad_stage) %>% drop_na(total_length)
 
 table(zander$year)
-```
-
-
-Removing outliers
-```{r}
-# Create box plot to see outliers
-boxplot(zander$total_length ~ zander$gonad_stage, xlab = "Gonad stage", ylab = "Length (cm)")
-
-# no obvious outliers
-
-# Identify the outliers based on the box plot
-# outliers <- boxplot(zander$total_length ~ zander$gonad_stage, plot = FALSE)$out
-# Remove outliers from the dataset
-# zander <- zander[!(zander$total_length %in% outliers), ]
 ```
 
 L50 for different years
@@ -1340,25 +1221,7 @@ upper_ci <- c(ci.L50.51s[2], ci.L50.60s[2], ci.L50.66s[2], ci.L50.67s[2], ci.L50
 
 sanderMatSize <- data.frame(year, predicted_values, lower_ci, upper_ci)
 
-# Create a data frame with predicted L50 values
-predicted_labels <- data.frame(year, predicted_values)
-
-# Plot
-ggplot(sanderMatSize, aes(x = year, y = predicted_values)) +
-  geom_point(size = 2, color = "black") +
-  geom_errorbar(aes(ymin = lower_ci, ymax = upper_ci), width = 0.05, color = "black", size = 1) +
-  geom_text(data = predicted_labels, aes(label = round(predicted_values, 1)), hjust = 1.2, vjust = -0.5, size = 4) +
-  geom_smooth(method = "loess", color = "blue", size = 1, se = FALSE) +
-  labs(title = "Pikeperch Changes of L50 with Confidence Intervals",
-       x = "Year",
-       y = "Predicted L50") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(size = 12, angle = 45, hjust = 1),  # Increase size of x-axis text
-        axis.text.y = element_text(size = 15),  # Increase size of y-axis text
-        axis.title = element_text(size = 15),   # Increase size of axis titles
-        plot.title = element_text(size = 16))   # Increase size of plot title
 ```
-
 
 
 Tables to see number of observations and main statiscis
@@ -1371,6 +1234,9 @@ zander_table2 <- zander %>%
     median_total_length = median(total_length),
     min_total_length = min(total_length),
     max_total_length = max(total_length), count_observation = n())
+
+zander_table <- zander %>%
+  count(maturity, year) %>% pivot_wider(names_from = maturity, values_from = n, values_fill = 0)
 ```
 
 ```{r}
@@ -1387,12 +1253,13 @@ zander_1 <- zander %>%
 ## Sander trend test
 
 ```{r}
+str(sanderMatSize, vec.len = 2)
+sanderMatSize$year <- as.numeric(sanderMatSize$year)
 # Remove rows where predicted_values are higher than 100 or lower than 1
-sanderMat <- sanderMatSize %>% filter(predicted_values <= 100 & predicted_values >= 1)
-# Remove values with negative ci
-sanderMat <- slice(sanderMat, -4, -11, -15)
 
-library(Kendall)
+# Excluding years (1966, 1967, 1973, 1992, 2002) which have 1 or less mature fish data
+sanderMat <- slice(sanderMatSize, -3, -4, -6, -13, -17)
+
 sanderMat2 <- select(sanderMat, predicted_values)
 ABtimeseries <- ts(sanderMat2)
 #Plot the time series data
@@ -1401,7 +1268,6 @@ plot(ABtimeseries)
 lines(lowess(time(ABtimeseries),ABtimeseries), col='red')
 
 # Kendall's Nonparametric Test for Montonic Trend
-library(EnvStats)
 sanderMat$year <- as.numeric(sanderMat$year)
 kendallTrendTest(predicted_values ~ year, data = sanderMat)
 # tau =  -0.5151515
@@ -1433,7 +1299,7 @@ summary(wt_gaus1)
 # year         -0.4826     0.1191  -4.053  0.00231 **
 
 # negative relationship
-p_value <- 0.024
+p_value <- 0.002
 # Plot model
 base_plot <- plot_model(wt_gaus1, type = "pred", 
            terms = c("year"),
@@ -1455,7 +1321,7 @@ specific_years <- c(1960, 1980, 2000)
 PP <- base_plot +
   geom_errorbar(data = combined_data, aes(x = x, ymin = lower_ci, ymax = upper_ci), width = 0.3, size = 0.5, color = "black", alpha = 0.6) +
   annotate("text", x = Inf, y = Inf, label = paste0("p = ", format(p_value, digits = 4)), 
-           hjust = 1.2, vjust = 2, size = 5)+ scale_x_continuous(breaks = specific_years) +
+           hjust = 1.2, vjust = 2, size = 5)+ scale_x_continuous(breaks = specific_years) + expand_limits(y = 0) +
   My_theme
 
 # Print the final plot
@@ -1572,7 +1438,7 @@ lmpp <- ggplot(combined_sampled_data, aes(x = year, y = predicted_values.x, grou
   scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black"), guide = FALSE) +
   geom_point(alpha = 0.1) +
   labs(title = "Pikeperch", x = "Year", y = "Predicted L50") + 
-annotate("text", x = max(combined_sampled_data$year), y = min(combined_sampled_data$predicted_values.x), label = paste0("p < ", significance_level, " in ", significant_p_values, "%"), hjust = 1, vjust = -18, size = 5, color = "black") + My_theme
+annotate("text", x = max(combined_sampled_data$year), y = min(combined_sampled_data$predicted_values.x), label = paste0("p < ", significance_level, " in ", significant_p_values, "%"), hjust = 1, vjust = -10, size = 5, color = "black") + expand_limits(y = 0) + My_theme
 ```
 
 
