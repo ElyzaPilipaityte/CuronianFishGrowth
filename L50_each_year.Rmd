@@ -29,6 +29,9 @@ library(EnvStats)
 ```{r}
 L50data <- read_csv(file = "L50data.csv")
 
+# Selecting only summer data to reduce bias in the analysis caused by the different sizes of fish during different seasons
+L50data <- L50data %>% filter (month == 6 | month == 7 | month == 8) %>% select(spp_name_lt, total_length, gonad_stage, year, month, sex_en)
+
 # function for Counting the length at which 50% of the fish are mature
 lrPerc <- function(cf,p) (log(p/(1-p))-cf[[1]])/cf[[2]]
 
@@ -440,7 +443,7 @@ Roach_mat <- Roach_mat %>% mutate(gonad_stage = ifelse(is.na(gonad_stage) & tota
 All different years
 
 ```{r}
-# Calculate the number of observations per year in zander
+# Calculate the number of observations per year 
 year_counts_Roach_mat <- Roach_mat %>%
   group_by(year) %>%
   summarise(n = n())
@@ -610,8 +613,8 @@ wt_gaus1 <- lm(predicted_values ~ year,
 summary(wt_gaus1)
 
 #              Estimate Std. Error t value Pr(>|t|)    
-# (Intercept) 405.36733   63.50251   6.383    8e-05 ***
-# year         -0.19385    0.03168  -6.119 0.000113 ***
+# (Intercept) 399.29488   61.06042   6.539 6.56e-05 ***
+# year         -0.19077    0.03044  -6.266 9.31e-05 ***
 
 # Significant negative relationship
 p_value <-  0.0001
@@ -940,8 +943,8 @@ wt_gaus1 <- lm(predicted_values ~ year,
 summary(wt_gaus1)
 
 #              Estimate Std. Error t value Pr(>|t|)    
-# (Intercept) 497.60124  152.97395   3.253  0.00770 **
-# year         -0.23965    0.07696  -3.114  0.00985 **
+# (Intercept) 494.94231  151.32682   3.271  0.00746 **
+# year         -0.23830    0.07612  -3.131  0.00957 **
 
 base_plot <- plot_model(wt_gaus1, type = "pred", 
            terms = c("year"),
@@ -1295,11 +1298,11 @@ wt_gaus1 <- lm(predicted_values ~ year,
 summary(wt_gaus1)
 
 #              Estimate Std. Error t value Pr(>|t|)    
-# (Intercept) 997.0718   236.6678   4.213  0.00179 **
-# year         -0.4826     0.1191  -4.053  0.00231 **
+# (Intercept) 986.6694   240.6056   4.101  0.00214 **
+# year         -0.4774     0.1211  -3.943  0.00276 **
 
 # negative relationship
-p_value <- 0.002
+p_value <- 0.003
 # Plot model
 base_plot <- plot_model(wt_gaus1, type = "pred", 
            terms = c("year"),
