@@ -75,6 +75,13 @@ table<- bream %>%
   summarise(
     median_length = median(std_length),
     median_age = median(age), count_observation = n())
+
+# scales and otholits data for age groups
+table <- bream %>%
+  group_by(age, method) %>%
+  summarise(count = n(), .groups = 'drop')  %>%
+  pivot_wider(names_from = method, values_from = count, values_fill = 0)
+
 ```
 
 Data exploration
@@ -84,7 +91,12 @@ colSums(is.na(bream))
 table(bream$age)
 
 # removing ages which do not have both methods
-bream1 <- bream %>% filter (age > 2 & age <= 11 & age != 5) %>% filter (std_length<55) %>% drop_na (season)
+bream1 <- bream %>% filter (age > 2 & age <= 16 & age != 5) %>% drop_na (season) %>% filter (std_length<55) 
+
+# making one group of ages between 11 to 16 years
+bream1 <- bream1 %>%
+  mutate(age = ifelse(age > 11, 12, age))
+
 table(bream1$year)
 
 bream1 <- bream1 %>% mutate(yearn = year - 1948)
@@ -284,6 +296,12 @@ table <- roach %>%
   summarise(
     median_length = median(std_length),
     median_age = median(age), count_observation = n())
+
+# scales and otholits data for age groups
+table <- roach %>%
+  group_by(age, method) %>%
+  summarise(count = n(), .groups = 'drop')  %>%
+  pivot_wider(names_from = method, values_from = count, values_fill = 0)
 ```
 
 Data exploration
@@ -292,7 +310,12 @@ Data exploration
 colSums(is.na(roach))
 table(roach$age)
 # removing ages which do not have both methods
-roach1 <- roach %>% filter (age > 2 & age <= 11) %>% drop_na(season)
+roach1 <- roach %>% filter (age > 0 & age <= 14) %>% drop_na(season)
+
+# making one group of ages between 11 to 16 years
+roach1 <- roach1 %>%
+  mutate(age = ifelse(age > 8, 9, age))
+
 table(roach1$year)
 
 roach1 <- roach1 %>% mutate(yearn = year - 1949) %>% filter(std_length<55)
@@ -494,6 +517,12 @@ table<- perch %>%
   summarise(
     median_length = median(std_length),
     median_age = median(age), count_observation = n())
+
+# scales and otholits data for age groups
+table <- perch %>%
+  group_by(age, method) %>%
+  summarise(count = n(), .groups = 'drop')  %>%
+  pivot_wider(names_from = method, values_from = count, values_fill = 0)
 ```
 
 Data exploration
@@ -707,6 +736,12 @@ table<- sander %>%
   summarise(
     median_length = median(std_length),
     median_age = median(age), count_observation = n())
+
+# scales and otholits data for age groups
+table <- sander %>%
+  group_by(age, method) %>%
+  summarise(count = n(), .groups = 'drop')  %>%
+  pivot_wider(names_from = method, values_from = count, values_fill = 0)
 ```
 
 Data exploration
@@ -961,13 +996,14 @@ create_plot <- function(model, species_name, show_x_axis_text = TRUE) {
 }
 
 # Species names
-species_names <- c("Bream", "Perch", "Pikeperch", "Roach")
+species_names <- c("Bream", "Roach", "Perch", "Pikeperch")
 
 # Create individual plots with species names
 plot1 <- create_plot(P2b, species_names[1], show_x_axis_text = TRUE)
-plot2 <- create_plot(P2p, species_names[2], show_x_axis_text = TRUE)
-plot3 <- create_plot(P2s, species_names[3], show_x_axis_text = TRUE)
-plot4 <- create_plot(P2r, species_names[4], show_x_axis_text = TRUE)
+plot2 <- create_plot(P2r, species_names[2], show_x_axis_text = TRUE)
+plot3 <- create_plot(P2p, species_names[3], show_x_axis_text = TRUE)
+plot4 <- create_plot(P2s, species_names[4], show_x_axis_text = TRUE)
+
 
 # Combine plots using cowplot
 combined_plot <- plot_grid(

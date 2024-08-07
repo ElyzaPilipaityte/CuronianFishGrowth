@@ -27,10 +27,10 @@ library(EnvStats)
 ### Loading data
 
 ```{r}
-L50data <- read_csv(file = "L50data.csv")
+L50data <- read_csv(file = "L50_data.csv")
 
 # Selecting only summer data to reduce bias in the analysis caused by the different sizes of fish during different seasons
-L50data <- L50data %>% filter (month == 6 | month == 7 | month == 8) %>% select(spp_name_lt, total_length, gonad_stage, year, month, sex_en)
+# L50data <- L50data %>% filter (month == 6 | month == 7 | month == 8) %>% select(spp_name_lt, total_length, gonad_stage, year, month, sex_en)
 
 # function for Counting the length at which 50% of the fish are mature
 lrPerc <- function(cf,p) (log(p/(1-p))-cf[[1]])/cf[[2]]
@@ -49,10 +49,21 @@ My_theme <- theme(
 #### Bream
 
 ```{r}
-Bream1 <- L50data %>% filter (spp_name_lt=="Karsis") 
+Bream1 <- L50data %>% filter (spp_name_lt=="Karsis")
+# fitting linear regression to get coefficients to counts total length where it is missing
+model <- lm(total_length ~ std_length, data = Bream1)
+summary(model)
+cor(Bream1$total_length, Bream1$std_length, use = "complete.obs") # 0.988
+
+# counting total length with regression coefficients and standard length
+Bream1$total_length[is.na(Bream1$total_length)] <- 1.656 + (Bream1$std_length[is.na(Bream1$total_length)] * 1.186) 
 
 # Adding gonad stage 1 to smallest individuals which total length less than 10 and which has no gonad stage data.
-Bream1 <- Bream1 %>% mutate(gonad_stage = ifelse(is.na(gonad_stage) & total_length < 10, "1", gonad_stage), gonad_stage = ifelse(gonad_stage == "2" & total_length > 50, NA, gonad_stage)) %>% drop_na(gonad_stage) %>% drop_na(total_length)
+Bream1 <- Bream1 %>% mutate(gonad_stage = ifelse(is.na(gonad_stage) & total_length < 10, "1", gonad_stage), gonad_stage = ifelse(gonad_stage == "2" & total_length > 50, NA, gonad_stage)) %>% drop_na(gonad_stage)
+
+colSums(is.na(Bream1)) #now all data has total length
+
+Bream1 <- Bream1 %>% select(spp_name_lt, total_length, gonad_stage, year, month, sex_en)
 ```
 
 Length at maturity counts for different years
@@ -236,12 +247,11 @@ br_table <- Bream1 %>%
 ## Bream trend test
 
 ```{r}
-table(breamMatSize$year)
 str(breamMatSize, vec.len = 2)
 breamMatSize$year <- as.numeric(breamMatSize$year)
 
 # removing years which have no mature fish data (1957, 1958, 1962 and 1951 have only 6 fish in 4-6 gonad stage which are making predicted L50 too high and unreliable).
-breamMat <- slice(breamMatSize, -2, -3, -4, -7)
+breamMat <- slice(breamMatSize, -3, -4, -7)
 
 breamMat2 <- dplyr::select(breamMat, predicted_values)
 ABtimeseries <- ts(breamMat2)
@@ -252,11 +262,11 @@ lines(lowess(time(ABtimeseries),ABtimeseries), col='red')
 
 # Kendall's Nonparametric Test for Montonic Trend
 kendallTrendTest(predicted_values ~ year, data = breamMat)
-# tau =  -0.2676923
-# z = -1.895573
-# P-value:   0.05801648
+# tau =  -0.3219373
+# z = -2.334854
+# P-value:   0.01955105
 
-# There is a highly significant negative trend in the data
+# There is a significant negative trend in the data
 # (i.e. size at maturity has significantly declined since 1950)
 ```
 
@@ -273,8 +283,8 @@ wt_gaus1 <- lm(predicted_values ~ year,
 #Model output
 summary(wt_gaus1)
 #              Estimate Std. Error t value Pr(>|t|)    
-# (Intercept) 296.50419  142.65503   2.078   0.0485 *
-# year         -0.13242    0.07194  -1.841   0.0781 .
+# (Intercept) 360.81962  132.74035   2.718   0.0118 *
+# year         -0.16476    0.06693  -2.462   0.0211 *
 
 # Plot model
 base_plot <- plot_model(wt_gaus1, type = "pred", 
@@ -307,7 +317,7 @@ br <- ggplot() +
   geom_errorbar(data = breamMat, aes(x = year, ymin = lower_ci, ymax = upper_ci), width = 0.3, size = 0.5, color = "black", alpha = 0.6) +  # Error bars for confidence intervals
   geom_line(data = plot_data, aes(x = x, y = predicted), color = "black") +  # Fitted line from model predictions
   geom_ribbon(data = plot_data, aes(x = x, ymin = ci.l, ymax = ci.u), alpha = 0.2, fill = "black") +
-  annotate("text", x = Inf, y = Inf, label = paste0("p = 0.078"), 
+  annotate("text", x = Inf, y = Inf, label = paste0("p = 0.02"), 
            hjust = 1.2, vjust = 2, size = 5) + labs(title = "Bream", x = "Year", y = "Length (cm)") + scale_x_continuous(breaks = specific_years) + expand_limits(y = 0) + My_theme
 
 ```
@@ -317,35 +327,36 @@ Accounting for uncertainty in each annual estimate of length at 50% maturity
 ```{r}
 # Creating random samples of size at maturity for every year based on the range of the 95% confidence intervals
 Y1950 <- runif(100, min=breamMat[1,3], max=breamMat[1,4])
-Y1959 <- runif(100, min=breamMat[2,3], max=breamMat[2,4])
-Y1960 <- runif(100, min=breamMat[3,3], max=breamMat[3,4])
-Y1966 <- runif(100, min=breamMat[4,3], max=breamMat[4,4])
-Y1967 <- runif(100, min=breamMat[5,3], max=breamMat[5,4])
-Y1968 <- runif(100, min=breamMat[6,3], max=breamMat[6,4])
-Y1973 <- runif(100, min=breamMat[7,3], max=breamMat[7,4])
-Y1974 <- runif(100, min=breamMat[8,3], max=breamMat[8,4])
-Y1975 <- runif(100, min=breamMat[9,3], max=breamMat[9,4])
-Y1976 <- runif(100, min=breamMat[10,3], max=breamMat[10,4])
-Y1977 <- runif(100, min=breamMat[11,3], max=breamMat[11,4])
-Y1978 <- runif(100, min=breamMat[12,3], max=breamMat[12,4])
-Y1979 <- runif(100, min=breamMat[13,3], max=breamMat[13,4])
-Y1984 <- runif(100, min=breamMat[14,3], max=breamMat[14,4])
-Y1987 <- runif(100, min=breamMat[15,3], max=breamMat[15,4])
-Y1988 <- runif(100, min=breamMat[16,3], max=breamMat[16,4])
-Y1989 <- runif(100, min=breamMat[17,3], max=breamMat[17,4])
-Y1990 <- runif(100, min=breamMat[18,3], max=breamMat[18,4])
-Y1991 <- runif(100, min=breamMat[19,3], max=breamMat[19,4])
-Y1992 <- runif(100, min=breamMat[20,3], max=breamMat[20,4])
-Y1993 <- runif(100, min=breamMat[21,3], max=breamMat[21,4])
-Y1995 <- runif(100, min=breamMat[22,3], max=breamMat[22,4])
-Y1998 <- runif(100, min=breamMat[23,3], max=breamMat[23,4])
-Y1999 <- runif(100, min=breamMat[24,3], max=breamMat[24,4])
-Y2004 <- runif(100, min=breamMat[25,3], max=breamMat[25,4])
-Y2006 <- runif(100, min=breamMat[26,3], max=breamMat[26,4])
+Y1951 <- runif(100, min=breamMat[2,3], max=breamMat[2,4])
+Y1959 <- runif(100, min=breamMat[3,3], max=breamMat[3,4])
+Y1960 <- runif(100, min=breamMat[4,3], max=breamMat[4,4])
+Y1966 <- runif(100, min=breamMat[5,3], max=breamMat[5,4])
+Y1967 <- runif(100, min=breamMat[6,3], max=breamMat[6,4])
+Y1968 <- runif(100, min=breamMat[7,3], max=breamMat[7,4])
+Y1973 <- runif(100, min=breamMat[8,3], max=breamMat[8,4])
+Y1974 <- runif(100, min=breamMat[9,3], max=breamMat[9,4])
+Y1975 <- runif(100, min=breamMat[10,3], max=breamMat[10,4])
+Y1976 <- runif(100, min=breamMat[11,3], max=breamMat[11,4])
+Y1977 <- runif(100, min=breamMat[12,3], max=breamMat[12,4])
+Y1978 <- runif(100, min=breamMat[13,3], max=breamMat[13,4])
+Y1979 <- runif(100, min=breamMat[14,3], max=breamMat[14,4])
+Y1984 <- runif(100, min=breamMat[15,3], max=breamMat[15,4])
+Y1987 <- runif(100, min=breamMat[16,3], max=breamMat[16,4])
+Y1988 <- runif(100, min=breamMat[17,3], max=breamMat[17,4])
+Y1989 <- runif(100, min=breamMat[18,3], max=breamMat[18,4])
+Y1990 <- runif(100, min=breamMat[19,3], max=breamMat[19,4])
+Y1991 <- runif(100, min=breamMat[20,3], max=breamMat[20,4])
+Y1992 <- runif(100, min=breamMat[21,3], max=breamMat[21,4])
+Y1993 <- runif(100, min=breamMat[22,3], max=breamMat[22,4])
+Y1995 <- runif(100, min=breamMat[23,3], max=breamMat[23,4])
+Y1998 <- runif(100, min=breamMat[24,3], max=breamMat[24,4])
+Y1999 <- runif(100, min=breamMat[25,3], max=breamMat[25,4])
+Y2004 <- runif(100, min=breamMat[26,3], max=breamMat[26,4])
+Y2006 <- runif(100, min=breamMat[27,3], max=breamMat[27,4])
 
 # Combine the vectors into a data frame
 data <- data.frame(
-  Y1950, Y1959, Y1960, Y1966, Y1967, Y1968, Y1973, Y1974, Y1975, 
+  Y1950, Y1951, Y1959, Y1960, Y1966, Y1967, Y1968, Y1973, Y1974, Y1975, 
   Y1976, Y1977, Y1978, Y1979, Y1984, Y1987, Y1988, Y1989, Y1990, Y1991, 
   Y1992, Y1993, Y1995, Y1998, Y1999, Y2004, Y2006)
 # Reshape data from wide to long format
@@ -427,7 +438,7 @@ lmb <- ggplot(combined_sampled_data, aes(x = year, y = predicted_values.x, group
   scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black"), guide = FALSE) +
   geom_point(alpha = 0.1) +
   labs(title = "Bream", x = "Year", y = "Predicted L50") +
-annotate("text", x = max(combined_sampled_data$year), y = min(combined_sampled_data$predicted_values.x), label = paste0("p < ", significance_level, " in ", significant_p_values, "%"), hjust = 1, vjust = -8, size = 5, color = "black") + expand_limits(y = 0) + My_theme
+annotate("text", x = max(combined_sampled_data$year), y = min(combined_sampled_data$predicted_values.x), label = paste0("p < ", significance_level, " in ", significant_p_values, "%"), hjust = 1, vjust = -9, size = 5, color = "black") + expand_limits(y = 0) + My_theme
 ```
 
 
@@ -436,8 +447,20 @@ annotate("text", x = max(combined_sampled_data$year), y = min(combined_sampled_d
 ```{r}
 Roach_mat <- L50data %>% filter (spp_name_lt=="Kuoja")
 
+# fitting linear regression to get coefficients to counts total length where it is missing
+model <- lm(total_length ~ std_length, data = Roach_mat)
+summary(model)
+cor(Roach_mat$total_length, Roach_mat$std_length, use = "complete.obs") # 0.89
+
+# counting total length with regression coefficients and standard length
+Roach_mat$total_length[is.na(Roach_mat$total_length)] <- 5.063 + (Roach_mat$std_length[is.na(Roach_mat$total_length)] * 0.95)
+
 # Adding gonad stage 1 to smallest individuals which total length less than 20 and which has no gonad stage data.
-Roach_mat <- Roach_mat %>% mutate(gonad_stage = ifelse(is.na(gonad_stage) & total_length < 5, "1", gonad_stage), gonad_stage = ifelse(gonad_stage == "2" & total_length > 30, NA, gonad_stage)) %>% drop_na(gonad_stage) %>% drop_na(total_length)
+Roach_mat <- Roach_mat %>% mutate(gonad_stage = ifelse(is.na(gonad_stage) & total_length < 5, "1", gonad_stage), gonad_stage = ifelse(gonad_stage == "2" & total_length > 30, NA, gonad_stage)) %>% drop_na(gonad_stage)
+
+colSums(is.na(Roach_mat)) #now all data has total length
+
+Roach_mat <- Roach_mat %>% select(spp_name_lt, total_length, gonad_stage, year, month, sex_en)
 ```
 
 All different years
@@ -495,22 +518,24 @@ summary(glm3)
 bcL3 <- car::Boot(glm3)
 
 L50.50s = apply(bcL3$t[,1:2], 1, lrPerc, p = 0.5)
-L50.59s = apply(bcL3$t[,1:2] + bcL3$t[,c(3, 17)], 1, lrPerc, p = 0.5)
-L50.60s = apply(bcL3$t[,1:2] + bcL3$t[,c(4, 18)], 1, lrPerc, p = 0.5)
-L50.62s = apply(bcL3$t[,1:2] + bcL3$t[,c(5, 19)], 1, lrPerc, p = 0.5)
-L50.66s = apply(bcL3$t[,1:2] + bcL3$t[,c(6, 20)], 1, lrPerc, p = 0.5)
-L50.68s = apply(bcL3$t[,1:2] + bcL3$t[,c(7, 21)], 1, lrPerc, p = 0.5)
-L50.73s = apply(bcL3$t[,1:2] + bcL3$t[,c(8, 22)], 1, lrPerc, p = 0.5)
-L50.78s = apply(bcL3$t[,1:2] + bcL3$t[,c(9, 23)], 1, lrPerc, p = 0.5)
-L50.79s = apply(bcL3$t[,1:2] + bcL3$t[,c(10, 24)], 1, lrPerc, p = 0.5)
-L50.82s = apply(bcL3$t[,1:2] + bcL3$t[,c(11, 25)], 1, lrPerc, p = 0.5)
-L50.89s = apply(bcL3$t[,1:2] + bcL3$t[,c(12, 26)], 1, lrPerc, p = 0.5)
-L50.90s = apply(bcL3$t[,1:2] + bcL3$t[,c(13, 27)], 1, lrPerc, p = 0.5)
-L50.13s = apply(bcL3$t[,1:2] + bcL3$t[,c(14, 28)], 1, lrPerc, p = 0.5)
-L50.14s = apply(bcL3$t[,1:2] + bcL3$t[,c(15, 29)], 1, lrPerc, p = 0.5)
-L50.15s = apply(bcL3$t[,1:2] + bcL3$t[,c(16, 30)], 1, lrPerc, p = 0.5)
+L50.51s = apply(bcL3$t[,1:2] + bcL3$t[,c(3, 18)], 1, lrPerc, p = 0.5)
+L50.59s = apply(bcL3$t[,1:2] + bcL3$t[,c(4, 19)], 1, lrPerc, p = 0.5)
+L50.60s = apply(bcL3$t[,1:2] + bcL3$t[,c(5, 20)], 1, lrPerc, p = 0.5)
+L50.62s = apply(bcL3$t[,1:2] + bcL3$t[,c(6, 21)], 1, lrPerc, p = 0.5)
+L50.66s = apply(bcL3$t[,1:2] + bcL3$t[,c(7, 22)], 1, lrPerc, p = 0.5)
+L50.68s = apply(bcL3$t[,1:2] + bcL3$t[,c(8, 23)], 1, lrPerc, p = 0.5)
+L50.73s = apply(bcL3$t[,1:2] + bcL3$t[,c(9, 24)], 1, lrPerc, p = 0.5)
+L50.78s = apply(bcL3$t[,1:2] + bcL3$t[,c(10, 25)], 1, lrPerc, p = 0.5)
+L50.79s = apply(bcL3$t[,1:2] + bcL3$t[,c(11, 26)], 1, lrPerc, p = 0.5)
+L50.82s = apply(bcL3$t[,1:2] + bcL3$t[,c(12, 27)], 1, lrPerc, p = 0.5)
+L50.89s = apply(bcL3$t[,1:2] + bcL3$t[,c(13, 28)], 1, lrPerc, p = 0.5)
+L50.90s = apply(bcL3$t[,1:2] + bcL3$t[,c(14, 29)], 1, lrPerc, p = 0.5)
+L50.13s = apply(bcL3$t[,1:2] + bcL3$t[,c(15, 30)], 1, lrPerc, p = 0.5)
+L50.14s = apply(bcL3$t[,1:2] + bcL3$t[,c(16, 31)], 1, lrPerc, p = 0.5)
+L50.15s = apply(bcL3$t[,1:2] + bcL3$t[,c(17, 32)], 1, lrPerc, p = 0.5)
 
 ( ci.L50.50s <-  quantile(L50.50s,c(0.025,0.975)) )
+( ci.L50.51s <-  quantile(L50.51s,c(0.025,0.975)) )
 ( ci.L50.59s <-  quantile(L50.59s,c(0.025,0.975)) )
 ( ci.L50.60s <-  quantile(L50.60s,c(0.025,0.975)) )
 ( ci.L50.62s <-  quantile(L50.62s,c(0.025,0.975)) )
@@ -528,30 +553,31 @@ L50.15s = apply(bcL3$t[,1:2] + bcL3$t[,c(16, 30)], 1, lrPerc, p = 0.5)
 
 # Maturity size -α/βi
 predicted_L50.50s <- -(coef(glm3)[1] / coef(glm3)[2])
-predicted_L50.59s <- -((coef(glm3)[1] + coef(glm3)[3]) / (coef(glm3)[2] + coef(glm3)[17]))
-predicted_L50.60s <- -((coef(glm3)[1] + coef(glm3)[4]) / (coef(glm3)[2] + coef(glm3)[18]))
-predicted_L50.62s <- -((coef(glm3)[1] + coef(glm3)[5]) / (coef(glm3)[2] + coef(glm3)[19]))
-predicted_L50.66s <- -((coef(glm3)[1] + coef(glm3)[6]) / (coef(glm3)[2] + coef(glm3)[20]))
-predicted_L50.68s <- -((coef(glm3)[1] + coef(glm3)[7]) / (coef(glm3)[2] + coef(glm3)[21]))
-predicted_L50.73s <- -((coef(glm3)[1] + coef(glm3)[8]) / (coef(glm3)[2] + coef(glm3)[22]))
-predicted_L50.78s <- -((coef(glm3)[1] + coef(glm3)[9]) / (coef(glm3)[2] + coef(glm3)[23]))
-predicted_L50.79s <- -((coef(glm3)[1] + coef(glm3)[10]) / (coef(glm3)[2] + coef(glm3)[24]))
-predicted_L50.82s <- -((coef(glm3)[1] + coef(glm3)[11]) / (coef(glm3)[2] + coef(glm3)[25]))
-predicted_L50.89s <- -((coef(glm3)[1] + coef(glm3)[12]) / (coef(glm3)[2] + coef(glm3)[26]))
-predicted_L50.90s <- -((coef(glm3)[1] + coef(glm3)[13]) / (coef(glm3)[2] + coef(glm3)[27]))
-predicted_L50.13s <- -((coef(glm3)[1] + coef(glm3)[14]) / (coef(glm3)[2] + coef(glm3)[28]))
-predicted_L50.14s <- -((coef(glm3)[1] + coef(glm3)[15]) / (coef(glm3)[2] + coef(glm3)[29]))
-predicted_L50.15s <- -((coef(glm3)[1] + coef(glm3)[16]) / (coef(glm3)[2] + coef(glm3)[30]))
+predicted_L50.51s <- -((coef(glm3)[1] + coef(glm3)[3]) / (coef(glm3)[2] + coef(glm3)[18]))
+predicted_L50.59s <- -((coef(glm3)[1] + coef(glm3)[4]) / (coef(glm3)[2] + coef(glm3)[19]))
+predicted_L50.60s <- -((coef(glm3)[1] + coef(glm3)[5]) / (coef(glm3)[2] + coef(glm3)[20]))
+predicted_L50.62s <- -((coef(glm3)[1] + coef(glm3)[6]) / (coef(glm3)[2] + coef(glm3)[21]))
+predicted_L50.66s <- -((coef(glm3)[1] + coef(glm3)[7]) / (coef(glm3)[2] + coef(glm3)[22]))
+predicted_L50.68s <- -((coef(glm3)[1] + coef(glm3)[8]) / (coef(glm3)[2] + coef(glm3)[23]))
+predicted_L50.73s <- -((coef(glm3)[1] + coef(glm3)[9]) / (coef(glm3)[2] + coef(glm3)[24]))
+predicted_L50.78s <- -((coef(glm3)[1] + coef(glm3)[10]) / (coef(glm3)[2] + coef(glm3)[25]))
+predicted_L50.79s <- -((coef(glm3)[1] + coef(glm3)[11]) / (coef(glm3)[2] + coef(glm3)[26]))
+predicted_L50.82s <- -((coef(glm3)[1] + coef(glm3)[12]) / (coef(glm3)[2] + coef(glm3)[27]))
+predicted_L50.89s <- -((coef(glm3)[1] + coef(glm3)[13]) / (coef(glm3)[2] + coef(glm3)[28]))
+predicted_L50.90s <- -((coef(glm3)[1] + coef(glm3)[14]) / (coef(glm3)[2] + coef(glm3)[29]))
+predicted_L50.13s <- -((coef(glm3)[1] + coef(glm3)[15]) / (coef(glm3)[2] + coef(glm3)[30]))
+predicted_L50.14s <- -((coef(glm3)[1] + coef(glm3)[16]) / (coef(glm3)[2] + coef(glm3)[31]))
+predicted_L50.15s <- -((coef(glm3)[1] + coef(glm3)[17]) / (coef(glm3)[2] + coef(glm3)[32]))
 
 ```
 
 ```{r}
-year <- c("1950", "1959", "1960", "1962", "1966", "1968", "1973", "1978", "1979", "1982", "1989", "1990", "2013", "2014", "2015")
-predicted_values <- c(predicted_L50.50s, predicted_L50.59s, predicted_L50.60s, predicted_L50.62s, predicted_L50.66s, predicted_L50.68s, predicted_L50.73s, predicted_L50.78s, predicted_L50.79s, predicted_L50.82s, predicted_L50.89s, predicted_L50.90s, predicted_L50.13s, predicted_L50.14s, predicted_L50.15s)
+year <- c("1950", "1951", "1959", "1960", "1962", "1966", "1968", "1973", "1978", "1979", "1982", "1989", "1990", "2013", "2014", "2015")
+predicted_values <- c(predicted_L50.50s, predicted_L50.51s, predicted_L50.59s, predicted_L50.60s, predicted_L50.62s, predicted_L50.66s, predicted_L50.68s, predicted_L50.73s, predicted_L50.78s, predicted_L50.79s, predicted_L50.82s, predicted_L50.89s, predicted_L50.90s, predicted_L50.13s, predicted_L50.14s, predicted_L50.15s)
 
-lower_ci <- c(ci.L50.50s[1], ci.L50.59s[1], ci.L50.60s[1], ci.L50.62s[1], ci.L50.66s[1], ci.L50.68s[1], ci.L50.73s[1], ci.L50.78s[1], ci.L50.79s[1], ci.L50.82s[1], ci.L50.89s[1], ci.L50.90s[1], ci.L50.13s[1], ci.L50.14s[1], ci.L50.15s[1])
+lower_ci <- c(ci.L50.50s[1], ci.L50.51s[1], ci.L50.59s[1], ci.L50.60s[1], ci.L50.62s[1], ci.L50.66s[1], ci.L50.68s[1], ci.L50.73s[1], ci.L50.78s[1], ci.L50.79s[1], ci.L50.82s[1], ci.L50.89s[1], ci.L50.90s[1], ci.L50.13s[1], ci.L50.14s[1], ci.L50.15s[1])
 
-upper_ci <- c(ci.L50.50s[2], ci.L50.59s[2], ci.L50.60s[2], ci.L50.62s[2], ci.L50.66s[2], ci.L50.68s[2], ci.L50.73s[2], ci.L50.78s[2], ci.L50.79s[2], ci.L50.82s[2], ci.L50.89s[2], ci.L50.90s[2], ci.L50.13s[2], ci.L50.14s[2], ci.L50.15s[2])
+upper_ci <- c(ci.L50.50s[2], ci.L50.51s[2], ci.L50.59s[2], ci.L50.60s[2], ci.L50.62s[2], ci.L50.66s[2], ci.L50.68s[2], ci.L50.73s[2], ci.L50.78s[2], ci.L50.79s[2], ci.L50.82s[2], ci.L50.89s[2], ci.L50.90s[2], ci.L50.13s[2], ci.L50.14s[2], ci.L50.15s[2])
 
 roachMatSize <- data.frame(year, predicted_values, lower_ci, upper_ci)
 
@@ -587,15 +613,15 @@ Roach_mat__1 <- Roach_mat %>%
 ```{r}
 str(roachMatSize, vec.len = 2)
 roachMatSize$year <- as.numeric(roachMatSize$year)
-# Removing years where there is less than 2 mature fish (1962, 1973, 2013)
-roachMat <- slice(roachMatSize, -4, -7, -13)
+# Removing years where there is less than 3 mature fish
+roachMat <- slice(roachMatSize, -2, -5, -8, -14)
 
 kendallTrendTest(predicted_values ~ year, data = roachMat)
-# tau =   -0.7272727
-# z = -3.22291
-# P-value:  0.001268955
+# tau =   -0.8787879
+# z = -3.908635
+# P-value:   9.281898e-05
 
-# There is a significant negative trend in the data
+# There is a strong significant negative trend in the data
 # (i.e. size at maturity has significantly declined since 1950)
 ```
 
@@ -613,11 +639,11 @@ wt_gaus1 <- lm(predicted_values ~ year,
 summary(wt_gaus1)
 
 #              Estimate Std. Error t value Pr(>|t|)    
-# (Intercept) 399.29488   61.06042   6.539 6.56e-05 ***
-# year         -0.19077    0.03044  -6.266 9.31e-05 ***
+# (Intercept) 632.19390   79.74450   7.928 1.27e-05 ***
+# year         -0.30797    0.04043  -7.617 1.81e-05 ***
 
 # Significant negative relationship
-p_value <-  0.0001
+p_value <-  1.81e-05
 
 base_plot <- plot_model(wt_gaus1, type = "pred", 
            terms = c("year"),
@@ -748,7 +774,7 @@ lmr <- ggplot(combined_sampled_data, aes(x = year, y = predicted_values.x, group
   scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black"), guide = FALSE) +
   geom_point(alpha = 0.1) +
   labs(title = "Roach", x = "Year", y = "Predicted L50") + 
-annotate("text", x = max(combined_sampled_data$year), y = min(combined_sampled_data$predicted_values.x), label = paste0("p < ", significance_level, " in ", significant_p_values, "%"), hjust = 1, vjust = -9, size = 5, color = "black") + expand_limits(y = 0) + My_theme
+annotate("text", x = max(combined_sampled_data$year), y = min(combined_sampled_data$predicted_values.x), label = paste0("p < ", significance_level, " in ", significant_p_values, "%"), hjust = 1, vjust = -12, size = 5, color = "black") + expand_limits(y = 0) + My_theme
 
 ```
 
@@ -758,9 +784,20 @@ annotate("text", x = max(combined_sampled_data$year), y = min(combined_sampled_d
 ```{r}
 Perch1 <- L50data %>% filter (spp_name_lt=="Eserys")
 
-# Adding gonad stage 1 to smallest individuals which total length less than 10 and which has no gonad stage data.
-Perch1 <- Perch1 %>% mutate(gonad_stage = ifelse(is.na(gonad_stage) & total_length < 5, "1", gonad_stage), gonad_stage = ifelse(gonad_stage == "2" & total_length > 30, NA, gonad_stage)) %>% drop_na(gonad_stage) %>% drop_na(total_length)
+# fitting linear regression to get coefficients to counts total length where it is missing
+model <- lm(total_length ~ std_length, data = Perch1)
+summary(model)
+cor(Perch1$total_length, Perch1$std_length, use = "complete.obs") # 0.987
 
+# counting total length with regression coefficients and standard length
+Perch1$total_length[is.na(Perch1$total_length)] <- 0.977 + (Perch1$std_length[is.na(Perch1$total_length)] * 1.104)
+
+# Adding gonad stage 1 to smallest individuals which total length less than 10 and which has no gonad stage data.
+Perch1 <- Perch1 %>% mutate(gonad_stage = ifelse(is.na(gonad_stage) & total_length < 5, "1", gonad_stage), gonad_stage = ifelse(gonad_stage == "2" & total_length > 30, NA, gonad_stage)) %>% drop_na(gonad_stage) 
+
+colSums(is.na(Perch1)) #now all data has total length
+
+Perch1 <- Perch1 %>% select(spp_name_lt, total_length, gonad_stage, year, month, sex_en)
 ```
 
 All different years
@@ -943,8 +980,8 @@ wt_gaus1 <- lm(predicted_values ~ year,
 summary(wt_gaus1)
 
 #              Estimate Std. Error t value Pr(>|t|)    
-# (Intercept) 494.94231  151.32682   3.271  0.00746 **
-# year         -0.23830    0.07612  -3.131  0.00957 **
+# (Intercept) 503.62714  152.74709   3.297  0.00711 **
+# year         -0.24264    0.07687  -3.156  0.00914 **
 
 base_plot <- plot_model(wt_gaus1, type = "pred", 
            terms = c("year"),
@@ -957,7 +994,7 @@ base_plot <- plot_model(wt_gaus1, type = "pred",
            show.legend = FALSE, dot.size = 1.5)
 
 # Significant negative relationship
-p_value <- 0.010
+p_value <- 0.009
 # Extract the plot data from plot_model
 plot_data <- base_plot$data
 # Combine plot data with perchMat for matching
@@ -1086,7 +1123,7 @@ lmp <- ggplot(combined_sampled_data, aes(x = year, y = predicted_values.x, group
   scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black"), guide = FALSE) +
   geom_point(alpha = 0.1) +
   labs(title = "Perch", x = "Year", y = "Predicted L50") +
-annotate("text", x = max(combined_sampled_data$year), y = min(combined_sampled_data$predicted_values.x), label = paste0("p < ", significance_level, " in ", significant_p_values, "%"), hjust = 1, vjust = -11, size = 5, color = "black") + expand_limits(y = 0) +
+annotate("text", x = max(combined_sampled_data$year), y = min(combined_sampled_data$predicted_values.x), label = paste0("p < ", significance_level, " in ", significant_p_values, "%"), hjust = 1, vjust = -12, size = 5, color = "black") + expand_limits(y = 0) +
    My_theme
 ```
 
@@ -1096,10 +1133,21 @@ annotate("text", x = max(combined_sampled_data$year), y = min(combined_sampled_d
 ```{r}
 zander <- L50data %>% filter (spp_name_lt=="Starkis")
 
-# Adding gonad stage 1 to smallest individuals which total length less than 10 and which has no gonad stage data.
-zander <- zander %>% mutate(gonad_stage = ifelse(is.na(gonad_stage) & total_length < 10, "1", gonad_stage), gonad_stage = ifelse(gonad_stage == "2" & total_length > 50, NA, gonad_stage)) %>% drop_na(gonad_stage) %>% drop_na(total_length)
+# fitting linear regression to get coefficients to counts total length where it is missing
+model <- lm(total_length ~ std_length, data = zander)
+summary(model)
+cor(zander$total_length, zander$std_length, use = "complete.obs") # 0.995
 
-table(zander$year)
+# counting total length with regression coefficients and standard length
+zander$total_length[is.na(zander$total_length)] <- 1.056 + (zander$std_length[is.na(zander$total_length)] * 1.125)
+
+# Adding gonad stage 1 to smallest individuals which total length less than 10 and which has no gonad stage data.
+zander <- zander %>% mutate(gonad_stage = ifelse(is.na(gonad_stage) & total_length < 10, "1", gonad_stage), gonad_stage = ifelse(gonad_stage == "2" & total_length > 50, NA, gonad_stage)) %>% drop_na(gonad_stage)
+
+colSums(is.na(zander)) #now all data has total length
+
+zander <- zander %>% select(spp_name_lt, total_length, gonad_stage, year, month, sex_en)
+
 ```
 
 L50 for different years
@@ -1157,25 +1205,27 @@ summary(glm3)
 bcL3 <- car::Boot(glm3)
 
 L50.51s = apply(bcL3$t[,1:2], 1, lrPerc, p = 0.5)
-L50.60s = apply(bcL3$t[,1:2] + bcL3$t[,c(3, 19)], 1, lrPerc, p = 0.5)
-L50.66s = apply(bcL3$t[,1:2] + bcL3$t[,c(4, 20)], 1, lrPerc, p = 0.5)
-L50.67s = apply(bcL3$t[,1:2] + bcL3$t[,c(5, 21)], 1, lrPerc, p = 0.5)
-L50.68s = apply(bcL3$t[,1:2] + bcL3$t[,c(6, 22)], 1, lrPerc, p = 0.5)
-L50.73s = apply(bcL3$t[,1:2] + bcL3$t[,c(7, 23)], 1, lrPerc, p = 0.5)
-L50.77s = apply(bcL3$t[,1:2] + bcL3$t[,c(8, 24)], 1, lrPerc, p = 0.5)
-L50.79s = apply(bcL3$t[,1:2] + bcL3$t[,c(9, 25)], 1, lrPerc, p = 0.5)
-L50.80s = apply(bcL3$t[,1:2] + bcL3$t[,c(10, 26)], 1, lrPerc, p = 0.5)
-L50.81s = apply(bcL3$t[,1:2] + bcL3$t[,c(11, 27)], 1, lrPerc, p = 0.5)
-L50.88s = apply(bcL3$t[,1:2] + bcL3$t[,c(12, 28)], 1, lrPerc, p = 0.5)
-L50.89s = apply(bcL3$t[,1:2] + bcL3$t[,c(13, 29)], 1, lrPerc, p = 0.5)
-L50.92s = apply(bcL3$t[,1:2] + bcL3$t[,c(14, 30)], 1, lrPerc, p = 0.5)
-L50.96s = apply(bcL3$t[,1:2] + bcL3$t[,c(15, 31)], 1, lrPerc, p = 0.5)
-L50.98s = apply(bcL3$t[,1:2] + bcL3$t[,c(16, 32)], 1, lrPerc, p = 0.5)
-L50.99s = apply(bcL3$t[,1:2] + bcL3$t[,c(17, 33)], 1, lrPerc, p = 0.5)
-L50.02s = apply(bcL3$t[,1:2] + bcL3$t[,c(18, 34)], 1, lrPerc, p = 0.5)
+L50.60s = apply(bcL3$t[,1:2] + bcL3$t[,c(3, 20)], 1, lrPerc, p = 0.5)
+L50.62s = apply(bcL3$t[,1:2] + bcL3$t[,c(4, 21)], 1, lrPerc, p = 0.5)
+L50.66s = apply(bcL3$t[,1:2] + bcL3$t[,c(5, 22)], 1, lrPerc, p = 0.5)
+L50.67s = apply(bcL3$t[,1:2] + bcL3$t[,c(6, 23)], 1, lrPerc, p = 0.5)
+L50.68s = apply(bcL3$t[,1:2] + bcL3$t[,c(7, 24)], 1, lrPerc, p = 0.5)
+L50.73s = apply(bcL3$t[,1:2] + bcL3$t[,c(8, 25)], 1, lrPerc, p = 0.5)
+L50.77s = apply(bcL3$t[,1:2] + bcL3$t[,c(9, 26)], 1, lrPerc, p = 0.5)
+L50.79s = apply(bcL3$t[,1:2] + bcL3$t[,c(10, 27)], 1, lrPerc, p = 0.5)
+L50.80s = apply(bcL3$t[,1:2] + bcL3$t[,c(11, 28)], 1, lrPerc, p = 0.5)
+L50.81s = apply(bcL3$t[,1:2] + bcL3$t[,c(12, 29)], 1, lrPerc, p = 0.5)
+L50.88s = apply(bcL3$t[,1:2] + bcL3$t[,c(13, 30)], 1, lrPerc, p = 0.5)
+L50.89s = apply(bcL3$t[,1:2] + bcL3$t[,c(14, 31)], 1, lrPerc, p = 0.5)
+L50.92s = apply(bcL3$t[,1:2] + bcL3$t[,c(15, 32)], 1, lrPerc, p = 0.5)
+L50.96s = apply(bcL3$t[,1:2] + bcL3$t[,c(16, 33)], 1, lrPerc, p = 0.5)
+L50.98s = apply(bcL3$t[,1:2] + bcL3$t[,c(17, 34)], 1, lrPerc, p = 0.5)
+L50.99s = apply(bcL3$t[,1:2] + bcL3$t[,c(18, 35)], 1, lrPerc, p = 0.5)
+L50.02s = apply(bcL3$t[,1:2] + bcL3$t[,c(19, 36)], 1, lrPerc, p = 0.5)
 
 ( ci.L50.51s <-  quantile(L50.51s,c(0.025,0.975)) )
 ( ci.L50.60s <-  quantile(L50.60s,c(0.025,0.975)) )
+( ci.L50.62s <-  quantile(L50.62s,c(0.025,0.975)) )
 ( ci.L50.66s <-  quantile(L50.66s,c(0.025,0.975)) )
 ( ci.L50.67s <-  quantile(L50.67s,c(0.025,0.975)) )
 ( ci.L50.68s <-  quantile(L50.68s,c(0.025,0.975)) )
@@ -1194,33 +1244,34 @@ L50.02s = apply(bcL3$t[,1:2] + bcL3$t[,c(18, 34)], 1, lrPerc, p = 0.5)
 
 # Maturity size -α/βi
 predicted_L50.51s <- -(coef(glm3)[1] / coef(glm3)[2])
-predicted_L50.60s <- -((coef(glm3)[1] + coef(glm3)[3]) / (coef(glm3)[2] + coef(glm3)[19]))
-predicted_L50.66s <- -((coef(glm3)[1] + coef(glm3)[4]) / (coef(glm3)[2] + coef(glm3)[20]))
-predicted_L50.67s <- -((coef(glm3)[1] + coef(glm3)[5]) / (coef(glm3)[2] + coef(glm3)[21]))
-predicted_L50.68s <- -((coef(glm3)[1] + coef(glm3)[6]) / (coef(glm3)[2] + coef(glm3)[22]))
-predicted_L50.73s <- -((coef(glm3)[1] + coef(glm3)[7]) / (coef(glm3)[2] + coef(glm3)[23]))
-predicted_L50.77s <- -((coef(glm3)[1] + coef(glm3)[8]) / (coef(glm3)[2] + coef(glm3)[24]))
-predicted_L50.79s <- -((coef(glm3)[1] + coef(glm3)[9]) / (coef(glm3)[2] + coef(glm3)[25]))
-predicted_L50.80s <- -((coef(glm3)[1] + coef(glm3)[10]) / (coef(glm3)[2] + coef(glm3)[26]))
-predicted_L50.81s <- -((coef(glm3)[1] + coef(glm3)[11]) / (coef(glm3)[2] + coef(glm3)[27]))
-predicted_L50.88s <- -((coef(glm3)[1] + coef(glm3)[12]) / (coef(glm3)[2] + coef(glm3)[28]))
-predicted_L50.89s <- -((coef(glm3)[1] + coef(glm3)[13]) / (coef(glm3)[2] + coef(glm3)[29]))
-predicted_L50.92s <- -((coef(glm3)[1] + coef(glm3)[14]) / (coef(glm3)[2] + coef(glm3)[30]))
-predicted_L50.96s <- -((coef(glm3)[1] + coef(glm3)[15]) / (coef(glm3)[2] + coef(glm3)[31]))
-predicted_L50.98s <- -((coef(glm3)[1] + coef(glm3)[16]) / (coef(glm3)[2] + coef(glm3)[32]))
-predicted_L50.99s <- -((coef(glm3)[1] + coef(glm3)[17]) / (coef(glm3)[2] + coef(glm3)[33]))
-predicted_L50.02s <- -((coef(glm3)[1] + coef(glm3)[18]) / (coef(glm3)[2] + coef(glm3)[34]))
+predicted_L50.60s <- -((coef(glm3)[1] + coef(glm3)[3]) / (coef(glm3)[2] + coef(glm3)[20]))
+predicted_L50.62s <- -((coef(glm3)[1] + coef(glm3)[4]) / (coef(glm3)[2] + coef(glm3)[21]))
+predicted_L50.66s <- -((coef(glm3)[1] + coef(glm3)[5]) / (coef(glm3)[2] + coef(glm3)[22]))
+predicted_L50.67s <- -((coef(glm3)[1] + coef(glm3)[6]) / (coef(glm3)[2] + coef(glm3)[23]))
+predicted_L50.68s <- -((coef(glm3)[1] + coef(glm3)[7]) / (coef(glm3)[2] + coef(glm3)[24]))
+predicted_L50.73s <- -((coef(glm3)[1] + coef(glm3)[8]) / (coef(glm3)[2] + coef(glm3)[25]))
+predicted_L50.77s <- -((coef(glm3)[1] + coef(glm3)[9]) / (coef(glm3)[2] + coef(glm3)[26]))
+predicted_L50.79s <- -((coef(glm3)[1] + coef(glm3)[10]) / (coef(glm3)[2] + coef(glm3)[27]))
+predicted_L50.80s <- -((coef(glm3)[1] + coef(glm3)[11]) / (coef(glm3)[2] + coef(glm3)[28]))
+predicted_L50.81s <- -((coef(glm3)[1] + coef(glm3)[12]) / (coef(glm3)[2] + coef(glm3)[29]))
+predicted_L50.88s <- -((coef(glm3)[1] + coef(glm3)[13]) / (coef(glm3)[2] + coef(glm3)[30]))
+predicted_L50.89s <- -((coef(glm3)[1] + coef(glm3)[14]) / (coef(glm3)[2] + coef(glm3)[31]))
+predicted_L50.92s <- -((coef(glm3)[1] + coef(glm3)[15]) / (coef(glm3)[2] + coef(glm3)[32]))
+predicted_L50.96s <- -((coef(glm3)[1] + coef(glm3)[16]) / (coef(glm3)[2] + coef(glm3)[33]))
+predicted_L50.98s <- -((coef(glm3)[1] + coef(glm3)[17]) / (coef(glm3)[2] + coef(glm3)[34]))
+predicted_L50.99s <- -((coef(glm3)[1] + coef(glm3)[18]) / (coef(glm3)[2] + coef(glm3)[35]))
+predicted_L50.02s <- -((coef(glm3)[1] + coef(glm3)[19]) / (coef(glm3)[2] + coef(glm3)[36]))
 
 ```
 
 ```{r}
 
-year <- c("1951", "1960", "1966", "1967", "1968", "1973", "1977", "1979", "1980", "1981", "1988", "1989", "1992", "1996", "1998", "1999", "2002")
-predicted_values <- c(predicted_L50.51s, predicted_L50.60s, predicted_L50.66s, predicted_L50.67s, predicted_L50.68s, predicted_L50.73s, predicted_L50.77s, predicted_L50.79s, predicted_L50.80s, predicted_L50.81s, predicted_L50.88s, predicted_L50.89s, predicted_L50.92s, predicted_L50.96s, predicted_L50.98s, predicted_L50.99s, predicted_L50.02s)
+year <- c("1951", "1960", "1962", "1966", "1967", "1968", "1973", "1977", "1979", "1980", "1981", "1988", "1989", "1992", "1996", "1998", "1999", "2002")
+predicted_values <- c(predicted_L50.51s, predicted_L50.60s,  predicted_L50.62s, predicted_L50.66s, predicted_L50.67s, predicted_L50.68s, predicted_L50.73s, predicted_L50.77s, predicted_L50.79s, predicted_L50.80s, predicted_L50.81s, predicted_L50.88s, predicted_L50.89s, predicted_L50.92s, predicted_L50.96s, predicted_L50.98s, predicted_L50.99s, predicted_L50.02s)
 
-lower_ci <- c(ci.L50.51s[1], ci.L50.60s[1], ci.L50.66s[1], ci.L50.67s[1], ci.L50.68s[1], ci.L50.73s[1], ci.L50.77s[1], ci.L50.79s[1], ci.L50.80s[1], ci.L50.81s[1], ci.L50.88s[1], ci.L50.89s[1], ci.L50.92s[1], ci.L50.96s[1], ci.L50.98s[1], ci.L50.99s[1], ci.L50.02s[1])
+lower_ci <- c(ci.L50.51s[1], ci.L50.60s[1], ci.L50.62s[1], ci.L50.66s[1], ci.L50.67s[1], ci.L50.68s[1], ci.L50.73s[1], ci.L50.77s[1], ci.L50.79s[1], ci.L50.80s[1], ci.L50.81s[1], ci.L50.88s[1], ci.L50.89s[1], ci.L50.92s[1], ci.L50.96s[1], ci.L50.98s[1], ci.L50.99s[1], ci.L50.02s[1])
 
-upper_ci <- c(ci.L50.51s[2], ci.L50.60s[2], ci.L50.66s[2], ci.L50.67s[2], ci.L50.68s[2], ci.L50.73s[2], ci.L50.77s[2], ci.L50.79s[2], ci.L50.80s[2], ci.L50.81s[2], ci.L50.88s[2], ci.L50.89s[2], ci.L50.92s[2], ci.L50.96s[2], ci.L50.98s[2], ci.L50.99s[2], ci.L50.02s[2])
+upper_ci <- c(ci.L50.51s[2], ci.L50.60s[2], ci.L50.62s[2], ci.L50.66s[2], ci.L50.67s[2], ci.L50.68s[2], ci.L50.73s[2], ci.L50.77s[2], ci.L50.79s[2], ci.L50.80s[2], ci.L50.81s[2], ci.L50.88s[2], ci.L50.89s[2], ci.L50.92s[2], ci.L50.96s[2], ci.L50.98s[2], ci.L50.99s[2], ci.L50.02s[2])
 
 sanderMatSize <- data.frame(year, predicted_values, lower_ci, upper_ci)
 
@@ -1258,10 +1309,10 @@ zander_1 <- zander %>%
 ```{r}
 str(sanderMatSize, vec.len = 2)
 sanderMatSize$year <- as.numeric(sanderMatSize$year)
-# Remove rows where predicted_values are higher than 100 or lower than 1
+# Remove rows where predicted_values are higher than 100 or lower than 3
 
-# Excluding years (1966, 1967, 1973, 1992, 2002) which have 1 or less mature fish data
-sanderMat <- slice(sanderMatSize, -3, -4, -6, -13, -17)
+# Excluding years which have 1 or less mature fish data
+sanderMat <- slice(sanderMatSize, -3, -4, -5, -7, -14, -18)
 
 sanderMat2 <- select(sanderMat, predicted_values)
 ABtimeseries <- ts(sanderMat2)
@@ -1271,11 +1322,10 @@ plot(ABtimeseries)
 lines(lowess(time(ABtimeseries),ABtimeseries), col='red')
 
 # Kendall's Nonparametric Test for Montonic Trend
-sanderMat$year <- as.numeric(sanderMat$year)
 kendallTrendTest(predicted_values ~ year, data = sanderMat)
-# tau =  -0.5151515
-# z = -2.262894
-# P-value: 0.02364222
+# tau =  -0.4545455
+# z = -1.988604
+# P-value: 0.04674494
 
 # There is a significant negative trend in the data
 # (i.e. size at maturity has significantly declined since 1950)
@@ -1298,11 +1348,11 @@ wt_gaus1 <- lm(predicted_values ~ year,
 summary(wt_gaus1)
 
 #              Estimate Std. Error t value Pr(>|t|)    
-# (Intercept) 986.6694   240.6056   4.101  0.00214 **
-# year         -0.4774     0.1211  -3.943  0.00276 **
+# (Intercept) 967.6895   245.8366   3.936  0.00279 **
+# year         -0.4678     0.1237  -3.783  0.00359 **
 
 # negative relationship
-p_value <- 0.003
+p_value <- 0.004
 # Plot model
 base_plot <- plot_model(wt_gaus1, type = "pred", 
            terms = c("year"),
