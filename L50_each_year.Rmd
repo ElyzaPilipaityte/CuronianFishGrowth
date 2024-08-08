@@ -317,7 +317,7 @@ br <- ggplot() +
   geom_errorbar(data = breamMat, aes(x = year, ymin = lower_ci, ymax = upper_ci), width = 0.3, size = 0.5, color = "black", alpha = 0.6) +  # Error bars for confidence intervals
   geom_line(data = plot_data, aes(x = x, y = predicted), color = "black") +  # Fitted line from model predictions
   geom_ribbon(data = plot_data, aes(x = x, ymin = ci.l, ymax = ci.u), alpha = 0.2, fill = "black") +
-  annotate("text", x = Inf, y = Inf, label = paste0("p = 0.02"), 
+  annotate("text", x = Inf, y = Inf, label = paste0("p = 0.021"), 
            hjust = 1.2, vjust = 2, size = 5) + labs(title = "Bream", x = "Year", y = "Length (cm)") + scale_x_continuous(breaks = specific_years) + expand_limits(y = 0) + My_theme
 
 ```
@@ -643,7 +643,7 @@ summary(wt_gaus1)
 # year         -0.30797    0.04043  -7.617 1.81e-05 ***
 
 # Significant negative relationship
-p_value <-  1.81e-05
+p_value <-  0.001
 
 base_plot <- plot_model(wt_gaus1, type = "pred", 
            terms = c("year"),
@@ -661,7 +661,7 @@ combined_data <- merge(plot_data, roachMat, by.x = "x", by.y = "year")
 # Add confidence intervals and customize the plot
 r <- base_plot +
   geom_errorbar(data = combined_data, aes(x = x, ymin = lower_ci, ymax = upper_ci), width = 0.3, size = 0.5, color = "black", alpha = 0.6) +
-  annotate("text", x = Inf, y = Inf, label = paste0("p = ", format(p_value, digits = 4)), 
+  annotate("text", x = Inf, y = Inf, label = paste0("p < ", format(p_value, digits = 4)), 
            hjust = 1.2, vjust = 2, size = 5) + expand_limits(y = 0) +
   My_theme
 
