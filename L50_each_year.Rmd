@@ -313,14 +313,39 @@ specific_years <- c(1960, 1980, 2000)
 
 # Plot predicted_values with error bars and add fitted line with shadow
 br <- ggplot() +
-  geom_point(data = breamMat, aes(x = year, y = predicted_values), color = "#6E6E6E", size = 1.5) +  # Points for predicted_values
+  geom_point(data = breamMat, aes(x = year, y = predicted_values), color = "black", size = 1.5) +  # Points for predicted_values
   geom_errorbar(data = breamMat, aes(x = year, ymin = lower_ci, ymax = upper_ci), width = 0.3, size = 0.5, color = "black", alpha = 0.6) +  # Error bars for confidence intervals
-  geom_line(data = plot_data, aes(x = x, y = predicted), color = "black") +  # Fitted line from model predictions
-  geom_ribbon(data = plot_data, aes(x = x, ymin = ci.l, ymax = ci.u), alpha = 0.2, fill = "black") +
-  annotate("text", x = Inf, y = Inf, label = paste0("p = 0.021"), 
+  geom_line(data = plot_data, aes(x = x, y = predicted), color = "cyan4") +  # Fitted line from model predictions
+  geom_ribbon(data = plot_data, aes(x = x, ymin = ci.l, ymax = ci.u), alpha = 0.2, fill = "cyan4") +
+  annotate("text", x = Inf, y = Inf, label = paste0("p = 0.021"),
            hjust = 1.2, vjust = 2, size = 5) + labs(title = "Bream", x = "Year", y = "Length (cm)") + scale_x_continuous(breaks = specific_years) + expand_limits(y = 0) + My_theme
 
 ```
+
+
+
+```{r}
+ggplot() +
+  geom_point(data = breamMat, aes(x = year, y = predicted_values), color = "black", size = 1.5) +  # Points for predicted_values
+  geom_errorbar(data = breamMat, aes(x = year, ymin = lower_ci, ymax = upper_ci), width = 0.3, size = 0.5, color = "black", alpha = 0.6) +  # Error bars for confidence intervals
+  geom_line(data = plot_data, aes(x = x, y = predicted), color = "cyan4") +  # Fitted line from model predictions
+  geom_ribbon(data = plot_data, aes(x = x, ymin = ci.l, ymax = ci.u), alpha = 0.2, fill = "cyan4") +
+  annotate("text", x = Inf, y = Inf, label = paste0("p = 0.021"), hjust = 1.2, vjust = 2, size = 8) +  # Increased size for the p-value label
+  labs(title = "Bream", x = "Year", y = "Length (cm)") +
+  scale_x_continuous(breaks = specific_years) +
+  expand_limits(y = 0) +
+  My_theme +
+  theme(
+    plot.title = element_text(size = 28),    # Bigger title
+    axis.title.x = element_text(size = 22),  # Bigger x-axis label
+    axis.title.y = element_text(size = 22),  # Bigger y-axis label
+    axis.text.x = element_text(size = 20),   # Bigger x-axis text
+    axis.text.y = element_text(size = 20)    # Bigger y-axis text
+  )
+
+```
+
+
 
 Accounting for uncertainty in each annual estimate of length at 50% maturity
 
