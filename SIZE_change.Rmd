@@ -71,7 +71,7 @@ Tables to see number of observations and main statiscis
 
 ```{r}
 table<- bream %>%
-  group_by(year) %>%
+  group_by(year, method) %>%
   summarise(
     median_length = median(std_length),
     median_age = median(age), count_observation = n())
@@ -292,7 +292,7 @@ Tables to see number of observations and main statiscis
 
 ```{r}
 table <- roach %>%
-  group_by(year) %>%
+  group_by(year, method) %>%
   summarise(
     median_length = median(std_length),
     median_age = median(age), count_observation = n())
@@ -513,7 +513,7 @@ Tables to see number of observations and main statiscis
 
 ```{r}
 table<- perch %>%
-  group_by(year) %>%
+  group_by(year, method) %>%
   summarise(
     median_length = median(std_length),
     median_age = median(age), count_observation = n())
@@ -732,7 +732,7 @@ Tables to see number of observations and main statiscis
 
 ```{r}
 table<- sander %>%
-  group_by(year) %>%
+  group_by(year, method) %>%
   summarise(
     median_length = median(std_length),
     median_age = median(age), count_observation = n())
