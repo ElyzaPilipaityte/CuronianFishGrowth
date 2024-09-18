@@ -67,7 +67,7 @@ names(bream)[names(bream) == "temp"] <- "temp_year1"
 names(bream)[names(bream) == "average_temp"] <- "temp_life"
 ```
 
-Tables to see number of observations and main statiscis
+Table to see number of observations and main statiscis
 
 ```{r}
 table<- bream %>%
@@ -75,12 +75,6 @@ table<- bream %>%
   summarise(
     median_length = median(std_length),
     median_age = median(age), count_observation = n())
-
-# scales and otholits data for age groups
-table <- bream %>%
-  group_by(age, method) %>%
-  summarise(count = n(), .groups = 'drop')  %>%
-  pivot_wider(names_from = method, values_from = count, values_fill = 0)
 
 ```
 
@@ -288,7 +282,7 @@ names(roach)[names(roach) == "temp"] <- "temp_year1"
 names(roach)[names(roach) == "average_temp"] <- "temp_life"
 ```
 
-Tables to see number of observations and main statiscis
+Table to see number of observations and main statiscis
 
 ```{r}
 table <- roach %>%
@@ -296,12 +290,6 @@ table <- roach %>%
   summarise(
     median_length = median(std_length),
     median_age = median(age), count_observation = n())
-
-# scales and otholits data for age groups
-table <- roach %>%
-  group_by(age, method) %>%
-  summarise(count = n(), .groups = 'drop')  %>%
-  pivot_wider(names_from = method, values_from = count, values_fill = 0)
 ```
 
 Data exploration
@@ -509,7 +497,7 @@ names(perch)[names(perch) == "average_temp"] <- "temp_life"
 
 ```
 
-Tables to see number of observations and main statiscis
+Table to see number of observations and main statiscis
 
 ```{r}
 table<- perch %>%
@@ -517,12 +505,6 @@ table<- perch %>%
   summarise(
     median_length = median(std_length),
     median_age = median(age), count_observation = n())
-
-# scales and otholits data for age groups
-table <- perch %>%
-  group_by(age, method) %>%
-  summarise(count = n(), .groups = 'drop')  %>%
-  pivot_wider(names_from = method, values_from = count, values_fill = 0)
 ```
 
 Data exploration
@@ -728,7 +710,7 @@ names(sander)[names(sander) == "temp"] <- "temp_year1"
 names(sander)[names(sander) == "average_temp"] <- "temp_life"
 ```
 
-Tables to see number of observations and main statiscis
+Table to see number of observations and main statiscis
 
 ```{r}
 table<- sander %>%
