@@ -60,8 +60,6 @@ for (i in 1:nrow(bream)) {
 
 bream$average_temp <- average_temp
 
-# perch <- perch %>% drop_na(temp_year1)
-
 # renaming columns to make it more clear
 names(bream)[names(bream) == "temp"] <- "temp_year1"
 names(bream)[names(bream) == "average_temp"] <- "temp_life"
