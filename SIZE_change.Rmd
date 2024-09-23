@@ -65,14 +65,20 @@ names(bream)[names(bream) == "temp"] <- "temp_year1"
 names(bream)[names(bream) == "average_temp"] <- "temp_life"
 ```
 
-Table to see number of observations and main statiscis
+Tables to see number of observations and main statiscis
 
 ```{r}
-table<- bream %>%
+tableb1<- bream %>%
   group_by(year, method) %>%
   summarise(
     median_length = median(std_length),
     median_age = median(age), count_observation = n())
+
+# scales and otholits data for age groups
+tableb2<- bream %>%
+  group_by(age, method) %>%
+  summarise(count = n(), .groups = 'drop')  %>%
+  pivot_wider(names_from = method, values_from = count, values_fill = 0)
 
 ```
 
@@ -280,14 +286,20 @@ names(roach)[names(roach) == "temp"] <- "temp_year1"
 names(roach)[names(roach) == "average_temp"] <- "temp_life"
 ```
 
-Table to see number of observations and main statiscis
+Tables to see number of observations and main statiscis
 
 ```{r}
-table <- roach %>%
+tabler1 <- roach %>%
   group_by(year, method) %>%
   summarise(
     median_length = median(std_length),
     median_age = median(age), count_observation = n())
+
+# scales and otholits data for age groups
+tabler2<- roach %>%
+  group_by(age, method) %>%
+  summarise(count = n(), .groups = 'drop')  %>%
+  pivot_wider(names_from = method, values_from = count, values_fill = 0)
 ```
 
 Data exploration
@@ -495,14 +507,20 @@ names(perch)[names(perch) == "average_temp"] <- "temp_life"
 
 ```
 
-Table to see number of observations and main statiscis
+Tables to see number of observations and main statiscis
 
 ```{r}
-table<- perch %>%
+tablep1 <- perch %>%
   group_by(year, method) %>%
   summarise(
     median_length = median(std_length),
     median_age = median(age), count_observation = n())
+
+# scales and otholits data for age groups
+tablep2<- perch %>%
+  group_by(age, method) %>%
+  summarise(count = n(), .groups = 'drop')  %>%
+  pivot_wider(names_from = method, values_from = count, values_fill = 0)
 ```
 
 Data exploration
@@ -708,17 +726,17 @@ names(sander)[names(sander) == "temp"] <- "temp_year1"
 names(sander)[names(sander) == "average_temp"] <- "temp_life"
 ```
 
-Table to see number of observations and main statiscis
+Tables to see number of observations and main statiscis
 
 ```{r}
-table<- sander %>%
+tables1 <- sander %>%
   group_by(year, method) %>%
   summarise(
     median_length = median(std_length),
     median_age = median(age), count_observation = n())
 
 # scales and otholits data for age groups
-table <- sander %>%
+tables2 <- sander %>%
   group_by(age, method) %>%
   summarise(count = n(), .groups = 'drop')  %>%
   pivot_wider(names_from = method, values_from = count, values_fill = 0)
@@ -892,115 +910,69 @@ abline(h=0, lty = 2)
 
 # One plot
 
+
 ```{r}
 library(cowplot)
 
-# Function to create a plot for a given model
-create_plot <- function(model, species_name, show_x_axis_text = TRUE) {
-  plot <- plot_model(model, type = "pred", terms = c("temp_life", "age"), show.data = TRUE, pred.type = "fe") +
-    labs(x = NULL, y = NULL) +  # Remove x and y axis labels from individual plots
-    ggtitle(species_name) +
-    theme_bw() +
-    theme(
-      panel.background = element_rect(fill = "white"),
-      axis.text = element_text(size = 14),
-      axis.title = element_text(size = 16),
-      panel.grid.major = element_blank(),
-      panel.grid.minor = element_blank(),
-      plot.title = element_text(size = 18, hjust = 0.5),
-      legend.text = element_text(size = 12),  
-      legend.title = element_text(size = 13)
-    )
-
-  # Conditionally remove x-axis text
-  if (!show_x_axis_text) {
-    plot <- plot + theme(axis.text.x = element_blank())
-  }
-  
-  return(plot)
-}
-
-# Species names
-species_names <- c("Bream", "Roach", "Perch", "Pikeperch")
-
-# Create individual plots with species names
-plot1 <- create_plot(P2b, species_names[1], show_x_axis_text = FALSE)
-plot2 <- create_plot(P2r, species_names[2], show_x_axis_text = FALSE)
-plot3 <- create_plot(P2p, species_names[3], show_x_axis_text = TRUE)
-plot4 <- create_plot(P2s, species_names[4], show_x_axis_text = TRUE)
-
-# Combine plots using cowplot
-combined_plot <- plot_grid(
-  plot1, plot2, plot3, plot4, 
-  label_size = 16, 
-  ncol = 2
-)
-
-# Adjust the positions of the labels to avoid overlap
-final_plot <- ggdraw() +
-  draw_plot(combined_plot, 0.02, 0.05, 1, 0.95) +  # Shift the combined plot up
-  draw_label("Length (cm)", x = -0.01, angle = 90, vjust = 1, hjust = 0.5, size = 16) +
-  draw_label("Average fish life temperature (C°)", y = -0.02, vjust = -1, hjust = 0.5, size = 16) + theme(plot.margin = margin(15, 15, 15, 15))
-
-print(final_plot)
-
-```
-
-
-One plot with the same x-axis range and labels for all subplots, starting from 0 on the y-axis.?? 
-```{r}
-library(cowplot)
-
-# Function to create a plot for a given model
 create_plot <- function(model, species_name, show_x_axis_text = TRUE) {
   plot <- plot_model(model, type = "pred", terms = c("temp_life", "age"), show.data = TRUE, pred.type = "fe") +
     ylim(0, NA) +
+    scale_y_continuous(limits = c(0, NA), breaks = c(0, 10, 20, 30, 40, 50, 60, 70)) +
+    scale_x_continuous(limits = c(8, 10.5), breaks = c(8, 9, 10)) +  # Force x-axis limits and breaks
     labs(x = NULL, y = NULL) +  # Remove x and y axis labels from individual plots
     ggtitle(species_name) +
     theme_bw() +
     theme(
       panel.background = element_rect(fill = "white"),
-      axis.text = element_text(size = 14),
-      axis.title = element_text(size = 16),
+      axis.text = element_text(size = 17),
+      axis.title = element_text(size = 18),
       panel.grid.major = element_blank(),
       panel.grid.minor = element_blank(),
-      plot.title = element_text(size = 18, hjust = 0.5)
+      plot.title = element_text(size = 20, hjust = 0.5),
+      legend.text = element_text(size = 16),  
+      legend.title = element_text(size = 16)
     )
 
-  # Conditionally remove x-axis text
+  # Conditionally remove x-axis text but keep the ticks
   if (!show_x_axis_text) {
-    plot <- plot + theme(axis.text.x = element_blank())
+    plot <- plot + theme(axis.text.x = element_blank())  # Hide only the axis text
   }
   
   return(plot)
 }
 
+
 # Species names
 species_names <- c("Bream", "Roach", "Perch", "Pikeperch")
 
 # Create individual plots with species names
-plot1 <- create_plot(P2b, species_names[1], show_x_axis_text = TRUE)
-plot2 <- create_plot(P2r, species_names[2], show_x_axis_text = TRUE)
+# Remove x-axis text (but keep ticks) for the upper plots
+plot1 <- create_plot(P2b, species_names[1], show_x_axis_text = FALSE)
+plot2 <- create_plot(P2r, species_names[2], show_x_axis_text = FALSE)
+
+# Keep x-axis text and ticks for the bottom plots
 plot3 <- create_plot(P2p, species_names[3], show_x_axis_text = TRUE)
 plot4 <- create_plot(P2s, species_names[4], show_x_axis_text = TRUE)
-
 
 # Combine plots using cowplot
 combined_plot <- plot_grid(
   plot1, plot2, plot3, plot4, 
-  label_size = 16, 
+  label_size = 18, 
   ncol = 2
 )
 
 # Adjust the positions of the labels to avoid overlap
 final_plot <- ggdraw() +
   draw_plot(combined_plot, 0.02, 0.05, 1, 0.95) +  # Shift the combined plot up
-  draw_label("Length (cm)", x = -0.01, angle = 90, vjust = 1, hjust = 0.5, size = 16) +
-  draw_label("Average fish life temperature (C°)", y = -0.02, vjust = -1, hjust = 0.5, size = 16) + theme(plot.margin = margin(15, 15, 15, 15))
+  draw_label("Length (cm)", x = -0.01, angle = 90, vjust = 1, hjust = 0.5, size = 18) +
+  draw_label("Average fish life temperature (C°)", y = -0.02, vjust = -1, hjust = 0.5, size = 18) + 
+  theme(plot.margin = margin(15, 15, 15, 15))
 
+# Print the final plot
 print(final_plot)
 
 ```
+
 
 Plot showing results from different aging methods
 
