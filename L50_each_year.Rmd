@@ -37,12 +37,14 @@ lrPerc <- function(cf,p) (log(p/(1-p))-cf[[1]])/cf[[2]]
 
 My_theme <- theme(
   panel.background = element_blank(),
-  panel.border = element_rect(fill = NA, linewidth = 1.25),
-  strip.background = element_rect(fill = "white", color = "white", linewidth = 1.25),
-  text = element_text(size = 16, family = "gillsans"),
+  panel.border = element_rect(fill = NA, linewidth = 1),
+  strip.background = element_rect(fill = "white", color = "white", linewidth = 1),
+  text = element_text(size = 20, family = "gillsans"),
   panel.grid.major = element_blank(),  # Remove major grid lines
   panel.grid.minor = element_blank()   # Remove minor grid lines
 )
+
+
 ```
 
 
@@ -641,7 +643,7 @@ summary(wt_gaus1)
 
 #              Estimate Std. Error t value Pr(>|t|)    
 # (Intercept) 632.19390   79.74450   7.928 1.27e-05 ***
-# year         -0.30797    0.04043  -7.617 1.81e-05 ***
+# year        -0.3082     0.0403  -7.647 1.74e-05 ***
 
 # Significant negative relationship
 p_value <-  0.001
@@ -1501,10 +1503,10 @@ annotate("text", x = max(combined_sampled_data$year), y = min(combined_sampled_d
 ```{r}
 # cowplot
 
-br <- br + labs(y = NULL, x = NULL)
-r <- r + labs(y = NULL, x = NULL)
-p <- p + labs(y = NULL, x = NULL)
-PP <- PP + labs(y = NULL, x = NULL) 
+br <- br + labs(y = NULL, x = NULL) + theme(plot.title = element_text(size = 18, hjust = 0.5))
+r <- r + labs(y = NULL, x = NULL) + theme(plot.title = element_text(size = 18, hjust = 0.5))
+p <- p + labs(y = NULL, x = NULL) + theme(plot.title = element_text(size = 18, hjust = 0.5))
+PP <- PP + labs(y = NULL, x = NULL) + theme(plot.title = element_text(size = 18, hjust = 0.5))
 
 # Combine the top plots without x-axis labels
 top_plots <- plot_grid(br, r, align = "v")
@@ -1516,10 +1518,10 @@ bottom_plots <- plot_grid(p, PP, align = "v")
 combined_plots <- plot_grid(top_plots, bottom_plots, ncol = 1)
 
 # Create a common y-axis label
-y_label <- ggdraw() + draw_label("Length at 50% maturity (cm)", angle = 90, vjust = 0.5)
+y_label <- ggdraw() + draw_label("Length at 50% maturity (cm)", angle = 90, vjust = 0.5, size = 17)
 
 # Create a common x-axis label
-x_label <- ggdraw() + draw_label("Year", vjust = 0.5)
+x_label <- ggdraw() + draw_label("Year", vjust = 0.5, size = 17)
 
 # Combine the y-axis label, combined plots, and x-axis label
 final_plot <- plot_grid(
@@ -1532,6 +1534,8 @@ final_plot_with_x <- plot_grid(
 
 # Print the final plot
 print(final_plot_with_x)
+
+ggsave("final_plot_with_x.tiff", units = "mm", width = 250, height = 210, dpi = 300, compression = 'lzw')
 
 ```
 
