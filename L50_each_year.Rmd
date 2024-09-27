@@ -41,7 +41,8 @@ My_theme <- theme(
   strip.background = element_rect(fill = "white", color = "white", linewidth = 1),
   text = element_text(size = 20, family = "gillsans"),
   panel.grid.major = element_blank(),  # Remove major grid lines
-  panel.grid.minor = element_blank()   # Remove minor grid lines
+  panel.grid.minor = element_blank(),   # Remove minor grid lines
+  plot.margin=unit(c(1,2,5,0), 'cm') # top, right, bottom, left
 )
 
 
@@ -423,6 +424,7 @@ for (i in 1:100) {
 combined_sampled_data <- bind_rows(sampled_data_list)
 # Display the results
 print(results_df)
+medians <- apply(results_df, 2, median)
 # Calculate the percentage of significant p-values (e.g., p < 0.05)
 significance_level <- 0.05
 significant_p_values <- sum(results_df$p_value < significance_level)
@@ -758,6 +760,8 @@ for (i in 1:100) {
 combined_sampled_data <- bind_rows(sampled_data_list)
 # Display the results
 print(results_df)
+
+apply(results_df, 2, median)
 
 # Calculate the percentage of significant p-values (e.g., p < 0.05)
 significance_level <- 0.05
@@ -1105,7 +1109,7 @@ combined_sampled_data <- bind_rows(sampled_data_list)
 
 # Display the results
 print(results_df)
-
+apply(results_df, 2, median)
 # Calculate the percentage of significant p-values (e.g., p < 0.05)
 significance_level <- 0.05
 significant_p_values <- sum(results_df$p_value < significance_level)
@@ -1113,7 +1117,7 @@ significant_p_values <- sum(results_df$p_value < significance_level)
 # Print the percentage of significant p-values
 cat("Percentage of significant p-values (p <", significance_level, "):", significant_p_values, "%\n")
 
-median(results_df[,1])
+apply(results_df, 2, median)
 
 # Merge results_df with combined_sampled_data
 combined_sampled_data <- combined_sampled_data %>%
@@ -1476,6 +1480,8 @@ combined_sampled_data <- bind_rows(sampled_data_list)
 # Display the results
 print(results_df)
 
+apply(results_df, 2, median)
+
 # Calculate the percentage of significant p-values (e.g., p < 0.05)
 significance_level <- 0.05
 significant_p_values <- sum(results_df$p_value < significance_level)
@@ -1535,7 +1541,7 @@ final_plot_with_x <- plot_grid(
 # Print the final plot
 print(final_plot_with_x)
 
-ggsave("final_plot_with_x.tiff", units = "mm", width = 250, height = 210, dpi = 300, compression = 'lzw')
+ggsave("final_plot_with_x.tiff", units = "mm", width = 230, height = 180, dpi = 300, compression = 'lzw')
 
 ```
 
