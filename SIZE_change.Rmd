@@ -925,10 +925,10 @@ create_plot <- function(model, species_name, show_x_axis_text = TRUE) {
     theme(
       panel.background = element_rect(fill = "white"),
       axis.text = element_text(size = 17),
-      axis.title = element_text(size = 18),
+      axis.title = element_text(size = 17),
       panel.grid.major = element_blank(),
       panel.grid.minor = element_blank(),
-      plot.title = element_text(size = 20, hjust = 0.5),
+      plot.title = element_text(size = 17, hjust = 0.5),
       legend.text = element_text(size = 16),  
       legend.title = element_text(size = 16)
     )
@@ -957,20 +957,22 @@ plot4 <- create_plot(P2s, species_names[4], show_x_axis_text = TRUE)
 # Combine plots using cowplot
 combined_plot <- plot_grid(
   plot1, plot2, plot3, plot4, 
-  label_size = 18, 
+  label_size = 17, 
   ncol = 2
 )
 
 # Adjust the positions of the labels to avoid overlap
 final_plot <- ggdraw() +
   draw_plot(combined_plot, 0.02, 0.05, 1, 0.95) +  # Shift the combined plot up
-  draw_label("Length (cm)", x = -0.01, angle = 90, vjust = 1, hjust = 0.5, size = 18) +
-  draw_label("Average fish life temperature (C°)", y = -0.02, vjust = -1, hjust = 0.5, size = 18) + 
+  draw_label("Length (cm)", x = -0.01, angle = 90, vjust = 1, hjust = 0.5, size = 17) +
+  draw_label("Average fish life temperature (C°)", y = -0.02, vjust = -1, hjust = 0.5, size = 17) + 
   theme(plot.margin = margin(15, 15, 15, 15))
 
 # Print the final plot
 print(final_plot)
 
+ggsave("final_plot_x3.tiff", plot = final_plot, units = "mm", 
+       width = 300, height = 250, dpi = 300, compression = 'lzw')
 ```
 
 

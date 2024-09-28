@@ -41,10 +41,8 @@ My_theme <- theme(
   strip.background = element_rect(fill = "white", color = "white", linewidth = 1),
   text = element_text(size = 20, family = "gillsans"),
   panel.grid.major = element_blank(),  # Remove major grid lines
-  panel.grid.minor = element_blank(),   # Remove minor grid lines
-  plot.margin=unit(c(1,2,5,0), 'cm') # top, right, bottom, left
+  panel.grid.minor = element_blank()   # Remove minor grid lines
 )
-
 
 ```
 
@@ -316,7 +314,7 @@ specific_years <- c(1960, 1980, 2000)
 
 # Plot predicted_values with error bars and add fitted line with shadow
 br <- ggplot() +
-  geom_point(data = breamMat, aes(x = year, y = predicted_values), color = "black", size = 1.5) +  # Points for predicted_values
+  geom_point(data = breamMat, aes(x = year, y = predicted_values), color = "azure4", size = 1) +  # Points for predicted_values
   geom_errorbar(data = breamMat, aes(x = year, ymin = lower_ci, ymax = upper_ci), width = 0.3, size = 0.5, color = "black", alpha = 0.6) +  # Error bars for confidence intervals
   geom_line(data = plot_data, aes(x = x, y = predicted), color = "black") +  # Fitted line from model predictions
   geom_ribbon(data = plot_data, aes(x = x, ymin = ci.l, ymax = ci.u), alpha = 0.2, fill = "black") +
@@ -443,7 +441,8 @@ lmb <- ggplot(combined_sampled_data, aes(x = year, y = predicted_values.x, group
   scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black"), guide = FALSE) +
   geom_point(alpha = 0.1) +
   labs(title = "Bream", x = "Year", y = "Predicted L50") +
-annotate("text", x = max(combined_sampled_data$year), y = min(combined_sampled_data$predicted_values.x), label = paste0("p < ", significance_level, " in ", significant_p_values, "%"), hjust = 1, vjust = -9, size = 5, color = "black") + expand_limits(y = 0) + My_theme
+  scale_x_continuous(breaks = c(1960, 1980, 2000)) +
+annotate("text", x = max(combined_sampled_data$year), y = min(combined_sampled_data$predicted_values.x), label = paste0("p < ", significance_level, " in ", significant_p_values, "%"), hjust = 1, vjust = -12, size = 5, color = "black") + expand_limits(y = 0) + My_theme
 ```
 
 
@@ -781,7 +780,7 @@ lmr <- ggplot(combined_sampled_data, aes(x = year, y = predicted_values.x, group
   scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black"), guide = FALSE) +
   geom_point(alpha = 0.1) +
   labs(title = "Roach", x = "Year", y = "Predicted L50") + 
-annotate("text", x = max(combined_sampled_data$year), y = min(combined_sampled_data$predicted_values.x), label = paste0("p < ", significance_level, " in ", significant_p_values, "%"), hjust = 1, vjust = -12, size = 5, color = "black") + expand_limits(y = 0) + My_theme
+annotate("text", x = max(combined_sampled_data$year), y = min(combined_sampled_data$predicted_values.x), label = paste0("p < ", significance_level, " in ", significant_p_values, "%"), hjust = 1, vjust = -16.5, size = 5, color = "black") + expand_limits(y = 0) + My_theme
 
 ```
 
@@ -1130,7 +1129,7 @@ lmp <- ggplot(combined_sampled_data, aes(x = year, y = predicted_values.x, group
   scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black"), guide = FALSE) +
   geom_point(alpha = 0.1) +
   labs(title = "Perch", x = "Year", y = "Predicted L50") +
-annotate("text", x = max(combined_sampled_data$year), y = min(combined_sampled_data$predicted_values.x), label = paste0("p < ", significance_level, " in ", significant_p_values, "%"), hjust = 1, vjust = -12, size = 5, color = "black") + expand_limits(y = 0) +
+annotate("text", x = max(combined_sampled_data$year), y = min(combined_sampled_data$predicted_values.x), label = paste0("p < ", significance_level, " in ", significant_p_values, "%"), hjust = 1, vjust = -16.5, size = 5, color = "black") + expand_limits(y = 0) +
    My_theme
 ```
 
@@ -1500,7 +1499,8 @@ lmpp <- ggplot(combined_sampled_data, aes(x = year, y = predicted_values.x, grou
   scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black"), guide = FALSE) +
   geom_point(alpha = 0.1) +
   labs(title = "Pikeperch", x = "Year", y = "Predicted L50") + 
-annotate("text", x = max(combined_sampled_data$year), y = min(combined_sampled_data$predicted_values.x), label = paste0("p < ", significance_level, " in ", significant_p_values, "%"), hjust = 1, vjust = -10, size = 5, color = "black") + expand_limits(y = 0) + My_theme
+  scale_x_continuous(breaks = c(1960, 1980, 2000)) +
+annotate("text", x = max(combined_sampled_data$year), y = min(combined_sampled_data$predicted_values.x), label = paste0("p < ", significance_level, " in ", significant_p_values, "%"), hjust = 1, vjust = -14, size = 5, color = "black") + expand_limits(y = 0) + My_theme
 ```
 
 
@@ -1508,11 +1508,11 @@ annotate("text", x = max(combined_sampled_data$year), y = min(combined_sampled_d
 
 ```{r}
 # cowplot
-
-br <- br + labs(y = NULL, x = NULL) + theme(plot.title = element_text(size = 18, hjust = 0.5))
-r <- r + labs(y = NULL, x = NULL) + theme(plot.title = element_text(size = 18, hjust = 0.5))
-p <- p + labs(y = NULL, x = NULL) + theme(plot.title = element_text(size = 18, hjust = 0.5))
-PP <- PP + labs(y = NULL, x = NULL) + theme(plot.title = element_text(size = 18, hjust = 0.5))
+library(grid) 
+br <- br + labs(y = NULL, x = NULL) + theme(plot.title = element_text(size = 17, hjust = 0.5))
+r <- r + labs(y = NULL, x = NULL) + theme(plot.title = element_text(size = 17, hjust = 0.5))
+p <- p + labs(y = NULL, x = NULL) + theme(plot.title = element_text(size = 17, hjust = 0.5))
+PP <- PP + labs(y = NULL, x = NULL) + theme(plot.title = element_text(size = 17, hjust = 0.5))
 
 # Combine the top plots without x-axis labels
 top_plots <- plot_grid(br, r, align = "v")
@@ -1538,20 +1538,29 @@ final_plot_with_x <- plot_grid(
   final_plot, x_label, ncol = 1, rel_heights = c(1, 0.05)
 )
 
-# Print the final plot
+final_plot_with_x <- ggdraw() + 
+  draw_grob(grid::rectGrob(gp = grid::gpar(fill = "white", col = NA)), 0, 0, 1, 1) +
+  draw_plot(final_plot, 0, 0, 1, 1) +  # Adjust plot position if necessary
+  draw_plot(x_label, 0, 0, 1.05, 0.001) +  # Draw x label with extra width
+  theme(plot.margin = margin(t = 0, r = 10, b = 10, l = 10, unit = "mm"))
+
+# Print the final plot with more white background
 print(final_plot_with_x)
 
-ggsave("final_plot_with_x.tiff", units = "mm", width = 230, height = 180, dpi = 300, compression = 'lzw')
+# Save the plot with larger canvas size and more space for axis labels
+ggsave("final_plot_with_x.tiff", plot = final_plot_with_x, units = "mm", 
+       width = 300, height = 250, dpi = 300, compression = 'lzw')
+
 
 ```
 
 ### Common plot CI
 
 ```{r}
-PP <- lmpp + labs(y = NULL, x = NULL)
-p <- lmp + labs(y = NULL, x = NULL)
-br <- lmb + labs(y = NULL, x = NULL)
-r <- lmr + labs(y = NULL, x = NULL)
+PP <- lmpp + labs(y = NULL, x = NULL) + theme(plot.title = element_text(size = 17, hjust = 0.5))
+p <- lmp + labs(y = NULL, x = NULL) + theme(plot.title = element_text(size = 17, hjust = 0.5))
+br <- lmb + labs(y = NULL, x = NULL) + theme(plot.title = element_text(size = 17, hjust = 0.5))
+r <- lmr + labs(y = NULL, x = NULL) + theme(plot.title = element_text(size = 17, hjust = 0.5))
 
 # Combine the top plots without x-axis labels
 top_plots <- plot_grid(br, r, align = "v")
@@ -1563,10 +1572,10 @@ bottom_plots <- plot_grid(p, PP, align = "v")
 combined_plots <- plot_grid(top_plots, bottom_plots, ncol = 1)
 
 # Create a common y-axis label
-y_label <- ggdraw() + draw_label("Length at 50% maturity (cm)", angle = 90, vjust = 0.5)
+y_label <- ggdraw() + draw_label("Length at 50% maturity (cm)", angle = 90, vjust = 0.5, size = 17)
 
 # Create a common x-axis label
-x_label <- ggdraw() + draw_label("Year", vjust = 0.5)
+x_label <- ggdraw() + draw_label("Year", vjust = 0.5, size = 17)
 
 # Combine the y-axis label, combined plots, and x-axis label
 final_plot <- plot_grid(
@@ -1577,6 +1586,16 @@ final_plot_with_x <- plot_grid(
   final_plot, x_label, ncol = 1, rel_heights = c(1, 0.05)
 )
 
+final_plot_with_x <- ggdraw() + 
+  draw_grob(grid::rectGrob(gp = grid::gpar(fill = "white", col = NA)), 0, 0, 1, 1) +
+  draw_plot(final_plot, 0, 0, 1, 1) +  # Adjust plot position if necessary
+  draw_plot(x_label, 0, 0, 1.05, 0.001) +  # Draw x label with extra width
+  theme(plot.margin = margin(t = 0, r = 10, b = 10, l = 10, unit = "mm"))
+
 # Print the final plot
 print(final_plot_with_x)
+
+# Save the plot with larger canvas size and more space for axis labels
+ggsave("final_plot_with_x2.tiff", plot = final_plot_with_x, units = "mm", 
+       width = 300, height = 250, dpi = 300, compression = 'lzw')
 ```
