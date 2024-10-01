@@ -966,12 +966,17 @@ final_plot <- ggdraw() +
   draw_plot(combined_plot, 0.02, 0.05, 1, 0.95) +  # Shift the combined plot up
   draw_label("Length (cm)", x = -0.01, angle = 90, vjust = 1, hjust = 0.5, size = 17) +
   draw_label("Average fish life temperature (C°)", y = -0.02, vjust = -1, hjust = 0.5, size = 17) + 
-  theme(plot.margin = margin(15, 15, 15, 15))
+  theme(plot.margin = margin(10, 50, 10, 10))
 
 # Print the final plot
 print(final_plot)
 
-ggsave("final_plot_x3.tiff", plot = final_plot, units = "mm", 
+background_plot <- ggdraw() + 
+  draw_plot(final_plot, x = 0.01, y = 0.01, width = 0.99, height = 0.99) +  # Adjust plot position for white space
+  theme(plot.background = element_rect(fill = "white", color = NA))  # Set the background to white
+
+# Save the combined plot with more white space around it
+ggsave("fig5.tiff", plot = background_plot, units = "mm", 
        width = 300, height = 250, dpi = 300, compression = 'lzw')
 ```
 
