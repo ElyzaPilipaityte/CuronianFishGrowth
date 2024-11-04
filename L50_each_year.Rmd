@@ -1547,10 +1547,13 @@ final_plot_with_x <- ggdraw() +
 # Print the final plot with more white background
 print(final_plot_with_x)
 
-# Save the plot with larger canvas size and more space for axis labels
-ggsave("final_plot_with_x.tiff", plot = final_plot_with_x, units = "mm", 
-       width = 300, height = 250, dpi = 300, compression = 'lzw')
+background_plot <- ggdraw() + 
+  draw_plot(final_plot_with_x, x = 0.001, y = 0.001, width = 0.99, height = 0.99) +  # Adjust plot position for white space
+  theme(plot.background = element_rect(fill = "white", color = NA))  # Set the background to white
 
+# Save the combined plot with more white space around it
+ggsave("fig3.tiff", plot = background_plot, units = "mm", 
+       width = 300, height = 250, dpi = 300, compression = 'lzw')
 
 ```
 
@@ -1595,7 +1598,11 @@ final_plot_with_x <- ggdraw() +
 # Print the final plot
 print(final_plot_with_x)
 
-# Save the plot with larger canvas size and more space for axis labels
-ggsave("final_plot_with_x2.tiff", plot = final_plot_with_x, units = "mm", 
+background_plot <- ggdraw() + 
+  draw_plot(final_plot_with_x, x = 0.001, y = 0.001, width = 0.99, height = 0.99) +  # Adjust plot position for white space
+  theme(plot.background = element_rect(fill = "white", color = NA))  # Set the background to white
+
+# Save the combined plot with more white space around it
+ggsave("fig4.tiff", plot = background_plot, units = "mm", 
        width = 300, height = 250, dpi = 300, compression = 'lzw')
 ```
