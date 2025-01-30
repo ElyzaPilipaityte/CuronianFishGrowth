@@ -3,6 +3,8 @@ title: "matSize_every_year"
 author: "Elyza Pilipaityte"
 date: "2024-01-24"
 output: html_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 ## clear memory
@@ -15,7 +17,6 @@ rm(list=ls())
 ```{r, include=FALSE, eval = T, echo = F, message = F, warning = F}
 
 library(tidyverse)
-library(ggplot2)
 library(dplyr)
 library(sjPlot)
 library(dplyr)

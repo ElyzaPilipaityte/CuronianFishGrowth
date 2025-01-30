@@ -16,7 +16,6 @@ Loading libraries
 library(tidyverse)
 library(car)
 # library(dplyr)
-library(ggplot2)
 library(lme4)
 # install.packages("sjPlot")
 library(sjPlot)
