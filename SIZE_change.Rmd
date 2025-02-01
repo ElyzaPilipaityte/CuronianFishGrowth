@@ -17,7 +17,6 @@ Loading libraries
 ```{r}
 library(tidyverse)
 library(car)
-# library(dplyr)
 library(lme4)
 # install.packages("sjPlot")
 library(sjPlot)
@@ -1309,7 +1308,7 @@ vbFitPlot2 <- ggplot() +
            color='#93003a', size=5, hjust=0)
 
 # Print the plot
-print(vbFitPlot1)
+print(vbFitPlot2)
 
 ```
 
@@ -1428,14 +1427,14 @@ vbFitPlot3 <- ggplot() +
            color='#93003a', size=5, hjust=0)
 
 # Print the plot
-print(vbFitPlot1)
+print(vbFitPlot3)
 
 ```
 
 # pikeperch
 
 ```{r}
-pikeperch <- sizedata %>% filter (spp_name_lt=="Starkis") %>% filter (year < 2023)
+pikeperch <- sizedata %>% filter (spp_name_lt=="Starkis")
 ```
 
 ```{r}
@@ -1529,7 +1528,7 @@ vbFitPlot4 <- ggplot() +
         legend.title=element_text(size=15)) +
 
   # Add annotations for Linf and K for the first periods with standard errors
-  annotate("text", x=1, y=65, 
+  annotate("text", x=10, y=45, 
            label=paste0("\nLinf = ", 
                         round(params_list[[1]]["Linf", "Estimate"], 2), 
                         " (SE ± ", round(params_list[[1]]["Linf", "Std. Error"], 2), ")\n",
@@ -1538,7 +1537,7 @@ vbFitPlot4 <- ggplot() +
            color='#404040', size=5, hjust=0) +
 
   # Add annotations for Linf and K for the second periods with standard errors
-  annotate("text", x=1, y=55, 
+  annotate("text", x=10, y=35, 
            label=paste0("\nLinf = ", 
                         round(params_list[[2]]["Linf", "Estimate"], 2), 
                         " (SE ± ", round(params_list[[2]]["Linf", "Std. Error"], 2), ")\n",
@@ -1547,11 +1546,20 @@ vbFitPlot4 <- ggplot() +
            color='#93003a', size=5, hjust=0)
 
 # Print the plot
-print(vbFitPlot1)
+print(vbFitPlot4)
 
 ```
 
-Something is wrong with pikeperch 2023 
+Something is wrong with pikeperch 2023. Not enough old pikeperch because of overfishing.
+```{r}
+sander_age_wide <- pikeperch %>%
+  group_by(periods, age) %>%
+  summarise(count = n(), .groups = "drop") %>%
+  pivot_wider(names_from = age, values_from = count, values_fill = 0)
+
+sander_age_wide
+```
+We can see that after 1987, almost no fish older than five years were caught.
 
 # One plot
 
@@ -1561,7 +1569,7 @@ library(gridExtra)
 library(grid)
 
 # Species names
-species_names <- c("Perca fluviatilis", "Sander lucioperca", "Abramis brama", "Rutilus rutilus")
+species_names <- c("Abramis brama", "Rutilus rutilus", "Perca fluviatilis", "Sander lucioperca")
 
 # Arrange the plots with titles
 combined_plot <- grid.arrange(
@@ -1575,22 +1583,15 @@ combined_plot <- grid.arrange(
 # Add common axis labels
 grid.arrange(combined_plot,
              bottom = textGrob("Age (years)", gp = gpar(fontsize = 16)),
-             left = textGrob("Total Length (cm)", rot = 90, gp = gpar(fontsize = 16))
+             left = textGrob("Standard Length (cm)", rot = 90, gp = gpar(fontsize = 16))
 )
 
 ```
 
 
 ```{r}
-# Create a TIFF file with specific resolution and dimensions
-svg("combined_plot.svg", width = 12, height = 10)
+ggsave("vonB.tiff", plot = combined_plot, units = "mm", 
+       width = 300, height = 250, dpi = 600, compression = 'lzw')
 
-# Draw the combined plot with common axis labels
-grid.arrange(combined_plot,
-             bottom = textGrob("Age (years)", gp = gpar(fontsize = 16)),
-             left = textGrob("Total Length (cm)", rot = 90, gp = gpar(fontsize = 16)))
-
-# Close the TIFF device
-dev.off()
 ```
 
