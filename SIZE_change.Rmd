@@ -1595,3 +1595,73 @@ ggsave("vonB.tiff", plot = combined_plot, units = "mm",
 
 ```
 
+###################
+# weight at age
+###################
+
+```{r}
+wgt_age <- sizedata %>%
+  drop_na(fish_weight) %>%
+  drop_na(age) %>%
+  mutate(spp_name_lt = case_when(
+    spp_name_lt == "Karsis" ~ "Abramis brama",
+    spp_name_lt == "Kuoja" ~ "Rutilus rutilus",
+    spp_name_lt == "Eserys" ~ "Perca fluviatilis",
+     spp_name_lt == "Starkis" ~ "Sander lucioperca",
+    TRUE ~ spp_name_lt  # Keep the original name if no match
+  ))
+
+My_theme <- theme(
+  panel.background = element_blank(),
+  panel.border = element_rect(fill = NA, linewidth = 1),
+  strip.background = element_rect(fill = "white", color = "white", linewidth = 1),
+  text = element_text(size = 20, family = "gillsans"),
+  panel.grid.major = element_blank(),  # Remove major grid lines
+  panel.grid.minor = element_blank()   # Remove minor grid lines
+)
+
+```
+
+```{r}
+wgt_age %>%
+  group_by(age) %>%
+  group_by(spp_name_lt) %>%
+  summarise(unique_temps = n_distinct(temp))
+
+models <- wgt_age %>%
+  group_by(age, spp_name_lt) %>%  # Group by both age and species
+  filter(n_distinct(temp) >= 3) %>%  # Ensure at least 3 unique temperature values
+  nest() %>%  # Nest data for modeling
+  mutate(model = map(data, ~ lm(fish_weight ~ poly(temp, 2), data = .))) %>%  # Fit models
+  select(-data)  # Remove nested data column if not needed
+
+# Generate predictions for smooth curves
+prediction_data <- models %>%
+  mutate(predictions = map(model, ~ data.frame(
+    temp = seq(8, 11, by = 0.1),
+    fish_weight = predict(.x, newdata = data.frame(temp = seq(8, 11, by = 0.1)))
+  ))) %>%
+  unnest(predictions) %>%  # Expand nested predictions
+  select(age, spp_name_lt, temp, fish_weight)  # Keep relevant columns
+
+# Create the plot
+wgt_temp <- ggplot(prediction_data, aes(x = temp, y = fish_weight, color = factor(age), group = age)) +
+  geom_line(size = 1) +  # Smooth curves
+  geom_text(data = prediction_data %>%
+              group_by(spp_name_lt, age) %>%
+              slice_max(fish_weight, n = 1),  # Add labels at peak weight
+            aes(label = age),
+            size = 5, hjust = -0.2, color = "black") +
+  labs(x = "Temperature (°C)",
+       y = "Weight-at-age (g)",
+       color = "Age") +
+  theme_minimal(base_size = 15) +
+  facet_wrap(~ spp_name_lt, scales = "free_y") +
+  My_theme
+```
+
+```{r}
+ggsave("weight_temp.tiff", plot = wgt_temp, units = "mm", 
+       width = 300, height = 250, dpi = 600, compression = 'lzw')
+
+```
