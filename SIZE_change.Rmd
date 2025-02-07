@@ -1167,7 +1167,7 @@ vbFitPlot1 <- ggplot() +
         axis.title=element_text(size=16),
         axis.text=element_text(size=15),
         legend.text=element_text(size=15),
-        legend.title=element_text(size=15)) +
+        legend.title=element_blank()) +
 
   # Add annotations for Linf and K for the first periods with standard errors
   annotate("text", x=1, y=65, 
@@ -1287,7 +1287,7 @@ vbFitPlot2 <- ggplot() +
         axis.title=element_text(size=16),
         axis.text=element_text(size=15),
         legend.text=element_text(size=15),
-        legend.title=element_text(size=15)) +
+        legend.title=element_blank()) +
 
   # Add annotations for Linf and K for the first periods with standard errors
   annotate("text", x=1, y=65, 
@@ -1406,7 +1406,7 @@ vbFitPlot3 <- ggplot() +
         axis.title=element_text(size=16),
         axis.text=element_text(size=15),
         legend.text=element_text(size=15),
-        legend.title=element_text(size=15)) +
+        legend.title=element_blank()) +
 
   # Add annotations for Linf and K for the first periods with standard errors
   annotate("text", x=1, y=65, 
@@ -1525,7 +1525,7 @@ vbFitPlot4 <- ggplot() +
         axis.title=element_text(size=16),
         axis.text=element_text(size=15),
         legend.text=element_text(size=15),
-        legend.title=element_text(size=15)) +
+        legend.title=element_blank()) +
 
   # Add annotations for Linf and K for the first periods with standard errors
   annotate("text", x=10, y=45, 
@@ -1569,14 +1569,14 @@ library(gridExtra)
 library(grid)
 
 # Species names
-species_names <- c("Abramis brama", "Rutilus rutilus", "Perca fluviatilis", "Sander lucioperca")
+species_names <- c("Bream", "Roach", "Perch", "Pikeperch")
 
 # Arrange the plots with titles
 combined_plot <- grid.arrange(
-  arrangeGrob(textGrob(species_names[1], gp = gpar(fontsize = 17, fontface = "italic")), vbFitPlot1, ncol = 1, heights = c(0.1, 1)),
-  arrangeGrob(textGrob(species_names[2], gp = gpar(fontsize = 17, fontface = "italic")), vbFitPlot2, ncol = 1, heights = c(0.1, 1)),
-  arrangeGrob(textGrob(species_names[3], gp = gpar(fontsize = 17, fontface = "italic")), vbFitPlot3, ncol = 1, heights = c(0.1, 1)),
-  arrangeGrob(textGrob(species_names[4], gp = gpar(fontsize = 17, fontface = "italic")), vbFitPlot4, ncol = 1, heights = c(0.1, 1)),
+  arrangeGrob(textGrob(species_names[1], gp = gpar(fontsize = 17)), vbFitPlot1, ncol = 1, heights = c(0.1, 1)),
+  arrangeGrob(textGrob(species_names[2], gp = gpar(fontsize = 17)), vbFitPlot2, ncol = 1, heights = c(0.1, 1)),
+  arrangeGrob(textGrob(species_names[3], gp = gpar(fontsize = 17)), vbFitPlot3, ncol = 1, heights = c(0.1, 1)),
+  arrangeGrob(textGrob(species_names[4], gp = gpar(fontsize = 17)), vbFitPlot4, ncol = 1, heights = c(0.1, 1)),
   ncol = 2, nrow = 2
 )
 
