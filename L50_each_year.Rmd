@@ -19,9 +19,7 @@ rm(list=ls())
 ```{r, include=FALSE, eval = T, echo = F, message = F, warning = F}
 
 library(tidyverse)
-library(dplyr)
 library(sjPlot)
-library(dplyr)
 library(cowplot)
 library(Kendall)
 library(EnvStats)
@@ -35,7 +33,7 @@ L50data <- read_csv(file = "L50_data.csv")
 # Selecting only summer data to reduce bias in the analysis caused by the different sizes of fish during different seasons
 # L50data <- L50data %>% filter (month == 6 | month == 7 | month == 8) %>% select(spp_name_lt, total_length, gonad_stage, year, month, sex_en)
 
-# function for Counting the length at which 50% of the fish are mature
+# function for counting the length at which a certain percentage of fish are mature
 lrPerc <- function(cf,p) (log(p/(1-p))-cf[[1]])/cf[[2]]
 
 My_theme <- theme(
@@ -67,7 +65,7 @@ Bream1 <- Bream1 %>% mutate(gonad_stage = ifelse(is.na(gonad_stage) & total_leng
 
 colSums(is.na(Bream1)) #now all data has total length
 
-Bream1 <- Bream1 %>% select(spp_name_lt, total_length, gonad_stage, year, month, sex_en)
+Bream1 <- Bream1 %>% select(spp_name_lt, total_length, gonad_stage, year, month, sex_en) %>% drop_na(total_length)
 ```
 
 Length at maturity counts for different years
@@ -478,13 +476,12 @@ year_counts_Roach_mat <- Roach_mat %>%
   group_by(year) %>%
   summarise(n = n())
 
-# Filter the zander dataset to include only years with more than 15 observations
+# Filter the dataset to include only years with more than 10 observations
 Roach_mat <- Roach_mat %>%
   inner_join(year_counts_Roach_mat, by = "year") %>%
   filter(n > 10) %>%
   select(-n)
 
-# Find unique years in the zander dataset
 unique_years <- unique(Roach_mat$year)
 
 # Create an empty dataframe to store the fictitious individuals
@@ -506,7 +503,7 @@ for (year in unique_years) {
   new_individuals <- rbind(new_individuals, new_data)
 }
 
-# Combine the new individuals with the original zander dataset
+# Combine the new individuals with the original dataset
 Roach_mat <- rbind(Roach_mat, new_individuals)
 
 # Creating new column with binomial maturity data (0 - Immature, 1 - Mature)
@@ -812,18 +809,18 @@ Perch1 <- Perch1 %>% select(spp_name_lt, total_length, gonad_stage, year, month,
 All different years
 
 ```{r}
-# Calculate the number of observations per year in zander
+# Calculate the number of observations per year
 year_counts_Perch1 <- Perch1 %>%
   group_by(year) %>%
   summarise(n = n())
 
-# Filter the zander dataset to include only years with more than 15 observations
+# Filter the dataset to include only years with more than 10 observations
 Perch1 <- Perch1 %>%
   inner_join(year_counts_Perch1, by = "year") %>%
   filter(n > 10) %>%
   select(-n)
 
-# Find unique years in the zander dataset
+# Find unique years in the dataset
 unique_years <- unique(Perch1$year)
 
 # Create an empty dataframe to store the fictitious individuals
@@ -845,7 +842,7 @@ for (year in unique_years) {
   new_individuals <- rbind(new_individuals, new_data)
 }
 
-# Combine the new individuals with the original zander dataset
+# Combine the new individuals with the original dataset
 Perch1 <- rbind(Perch1, new_individuals)
 
 # Creating new column with binomial maturity data (0 - Immature, 1 - Mature)
@@ -962,7 +959,7 @@ Perch1_1 <- Perch1 %>%
 #Use 'str' to inspect the data frame 
 str(perchMatSize, vec.len = 2)
 perchMatSize$year <- as.numeric(perchMatSize$year)
-# Excluding years (1973, 2009, 2013) which have 1 or less mature fish data
+# Excluding years (1973, 2009, 2013) which have 3 or less mature fish data
 perchMat <- slice(perchMatSize, -5, -13, -14)
 
 # Kendall's Nonparametric Test for Montonic Trend
@@ -1167,7 +1164,7 @@ year_counts_zander <- zander %>%
   group_by(year) %>%
   summarise(n = n())
 
-# Filter the zander dataset to include only years with more than 15 observations
+# Filter the zander dataset to include only years with more than 10 observations
 zander <- zander %>%
   inner_join(year_counts_zander, by = "year") %>%
   filter(n > 10) %>%
@@ -1274,7 +1271,6 @@ predicted_L50.02s <- -((coef(glm3)[1] + coef(glm3)[19]) / (coef(glm3)[2] + coef(
 ```
 
 ```{r}
-
 year <- c("1951", "1960", "1962", "1966", "1967", "1968", "1973", "1977", "1979", "1980", "1981", "1988", "1989", "1992", "1996", "1998", "1999", "2002")
 predicted_values <- c(predicted_L50.51s, predicted_L50.60s,  predicted_L50.62s, predicted_L50.66s, predicted_L50.67s, predicted_L50.68s, predicted_L50.73s, predicted_L50.77s, predicted_L50.79s, predicted_L50.80s, predicted_L50.81s, predicted_L50.88s, predicted_L50.89s, predicted_L50.92s, predicted_L50.96s, predicted_L50.98s, predicted_L50.99s, predicted_L50.02s)
 
