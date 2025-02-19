@@ -171,6 +171,8 @@ anova(P1, P2b)
 P3 <- lmer(std_length ~ fage + temp_life +  fage * method + (1|season), data = bream1, REML = F)
 P4b <- lmer(std_length ~ fage * temp_life +  fage * method + (1|season), data = bream1, REML = F)
 anova(P3, P4b)
+
+anova(P2b, P4b)
 ```
 
 ```{r}
@@ -227,6 +229,18 @@ tab_model(P2b,
              transform = NULL)
 ```
 
+```{r}
+# Summarise neatly in a table
+tab_model(P4b,
+          show.zeroinf = F,
+             dv.labels = c("Bream"),
+           string.pred = "Coefficient",
+             string.ci = "Conf. Int (95%)",
+              string.p = "P-value",
+               p.style = c("numeric"),
+                emph.p = FALSE,
+             transform = NULL)
+```
 
 Residuals
 ```{r}
@@ -976,7 +990,7 @@ background_plot <- ggdraw() +
   theme(plot.background = element_rect(fill = "white", color = NA))  # Set the background to white
 
 # Save the combined plot with more white space around it
-ggsave("fig5.tiff", plot = background_plot, units = "mm", 
+# ggsave("fig5.tiff", plot = background_plot, units = "mm", 
        width = 300, height = 250, dpi = 300, compression = 'lzw')
 ```
 
