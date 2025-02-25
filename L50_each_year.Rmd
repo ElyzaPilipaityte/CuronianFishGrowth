@@ -861,21 +861,22 @@ summary(glm3)
 bcL3 <- car::Boot(glm3)
 
 L50.51p = apply(bcL3$t[,1:2], 1, lrPerc, p = 0.5)
-L50.66p = apply(bcL3$t[,1:2] + bcL3$t[,c(3, 18)], 1, lrPerc, p = 0.5)
-L50.67p = apply(bcL3$t[,1:2] + bcL3$t[,c(4, 19)], 1, lrPerc, p = 0.5)
-L50.68p = apply(bcL3$t[,1:2] + bcL3$t[,c(5, 20)], 1, lrPerc, p = 0.5)
-L50.73p = apply(bcL3$t[,1:2] + bcL3$t[,c(6, 21)], 1, lrPerc, p = 0.5)
-L50.76p = apply(bcL3$t[,1:2] + bcL3$t[,c(7, 22)], 1, lrPerc, p = 0.5)
-L50.77p = apply(bcL3$t[,1:2] + bcL3$t[,c(8, 23)], 1, lrPerc, p = 0.5)
-L50.78p = apply(bcL3$t[,1:2] + bcL3$t[,c(9, 24)], 1, lrPerc, p = 0.5)
-L50.79p = apply(bcL3$t[,1:2] + bcL3$t[,c(10, 25)], 1, lrPerc, p = 0.5)
-L50.81p = apply(bcL3$t[,1:2] + bcL3$t[,c(11, 26)], 1, lrPerc, p = 0.5)
-L50.90p = apply(bcL3$t[,1:2] + bcL3$t[,c(12, 27)], 1, lrPerc, p = 0.5)
-L50.91p = apply(bcL3$t[,1:2] + bcL3$t[,c(13, 28)], 1, lrPerc, p = 0.5)
-L50.09p = apply(bcL3$t[,1:2] + bcL3$t[,c(14, 29)], 1, lrPerc, p = 0.5)
-L50.13p = apply(bcL3$t[,1:2] + bcL3$t[,c(15, 30)], 1, lrPerc, p = 0.5)
-L50.14p = apply(bcL3$t[,1:2] + bcL3$t[,c(16, 31)], 1, lrPerc, p = 0.5)
-L50.15p = apply(bcL3$t[,1:2] + bcL3$t[,c(17, 32)], 1, lrPerc, p = 0.5)
+L50.66p = apply(bcL3$t[,1:2] + bcL3$t[,c(3, 19)], 1, lrPerc, p = 0.5)
+L50.67p = apply(bcL3$t[,1:2] + bcL3$t[,c(4, 20)], 1, lrPerc, p = 0.5)
+L50.68p = apply(bcL3$t[,1:2] + bcL3$t[,c(5, 21)], 1, lrPerc, p = 0.5)
+L50.73p = apply(bcL3$t[,1:2] + bcL3$t[,c(6, 22)], 1, lrPerc, p = 0.5)
+L50.76p = apply(bcL3$t[,1:2] + bcL3$t[,c(7, 23)], 1, lrPerc, p = 0.5)
+L50.77p = apply(bcL3$t[,1:2] + bcL3$t[,c(8, 24)], 1, lrPerc, p = 0.5)
+L50.78p = apply(bcL3$t[,1:2] + bcL3$t[,c(9, 25)], 1, lrPerc, p = 0.5)
+L50.79p = apply(bcL3$t[,1:2] + bcL3$t[,c(10, 26)], 1, lrPerc, p = 0.5)
+L50.81p = apply(bcL3$t[,1:2] + bcL3$t[,c(11, 27)], 1, lrPerc, p = 0.5)
+L50.90p = apply(bcL3$t[,1:2] + bcL3$t[,c(12, 28)], 1, lrPerc, p = 0.5)
+L50.91p = apply(bcL3$t[,1:2] + bcL3$t[,c(13, 29)], 1, lrPerc, p = 0.5)
+L50.09p = apply(bcL3$t[,1:2] + bcL3$t[,c(14, 30)], 1, lrPerc, p = 0.5)
+L50.13p = apply(bcL3$t[,1:2] + bcL3$t[,c(15, 31)], 1, lrPerc, p = 0.5)
+L50.14p = apply(bcL3$t[,1:2] + bcL3$t[,c(16, 32)], 1, lrPerc, p = 0.5)
+L50.15p = apply(bcL3$t[,1:2] + bcL3$t[,c(17, 33)], 1, lrPerc, p = 0.5)
+L50.23p = apply(bcL3$t[,1:2] + bcL3$t[,c(18, 34)], 1, lrPerc, p = 0.5)
 
 ( ci.L50.51p <-  quantile(L50.51p,c(0.025,0.975)) )
 ( ci.L50.66p <-  quantile(L50.66p,c(0.025,0.975)) )
@@ -893,35 +894,37 @@ L50.15p = apply(bcL3$t[,1:2] + bcL3$t[,c(17, 32)], 1, lrPerc, p = 0.5)
 ( ci.L50.13p <-  quantile(L50.13p,c(0.025,0.975)) )
 ( ci.L50.14p <-  quantile(L50.14p,c(0.025,0.975)) )
 ( ci.L50.15p <-  quantile(L50.15p,c(0.025,0.975)) )
+( ci.L50.23p <-  quantile(L50.23p,c(0.025,0.975)) )
 
 # Maturity size -α/βi
 predicted_L50.51p <- -(coef(glm3)[1] / coef(glm3)[2])
-predicted_L50.66p <- -((coef(glm3)[1] + coef(glm3)[3]) / (coef(glm3)[2] + coef(glm3)[18]))
-predicted_L50.67p <- -((coef(glm3)[1] + coef(glm3)[4]) / (coef(glm3)[2] + coef(glm3)[19]))
-predicted_L50.68p <- -((coef(glm3)[1] + coef(glm3)[5]) / (coef(glm3)[2] + coef(glm3)[20]))
-predicted_L50.73p <- -((coef(glm3)[1] + coef(glm3)[6]) / (coef(glm3)[2] + coef(glm3)[21]))
-predicted_L50.76p <- -((coef(glm3)[1] + coef(glm3)[7]) / (coef(glm3)[2] + coef(glm3)[22]))
-predicted_L50.77p <- -((coef(glm3)[1] + coef(glm3)[8]) / (coef(glm3)[2] + coef(glm3)[23]))
-predicted_L50.78p <- -((coef(glm3)[1] + coef(glm3)[9]) / (coef(glm3)[2] + coef(glm3)[24]))
-predicted_L50.79p <- -((coef(glm3)[1] + coef(glm3)[10]) / (coef(glm3)[2] + coef(glm3)[25]))
-predicted_L50.81p <- -((coef(glm3)[1] + coef(glm3)[11]) / (coef(glm3)[2] + coef(glm3)[26]))
-predicted_L50.90p <- -((coef(glm3)[1] + coef(glm3)[12]) / (coef(glm3)[2] + coef(glm3)[27]))
-predicted_L50.91p <- -((coef(glm3)[1] + coef(glm3)[13]) / (coef(glm3)[2] + coef(glm3)[28]))
-predicted_L50.09p <- -((coef(glm3)[1] + coef(glm3)[14]) / (coef(glm3)[2] + coef(glm3)[29]))
-predicted_L50.13p <- -((coef(glm3)[1] + coef(glm3)[15]) / (coef(glm3)[2] + coef(glm3)[30]))
-predicted_L50.14p <- -((coef(glm3)[1] + coef(glm3)[16]) / (coef(glm3)[2] + coef(glm3)[31]))
-predicted_L50.15p <- -((coef(glm3)[1] + coef(glm3)[17]) / (coef(glm3)[2] + coef(glm3)[32]))
+predicted_L50.66p <- -((coef(glm3)[1] + coef(glm3)[3]) / (coef(glm3)[2] + coef(glm3)[19]))
+predicted_L50.67p <- -((coef(glm3)[1] + coef(glm3)[4]) / (coef(glm3)[2] + coef(glm3)[20]))
+predicted_L50.68p <- -((coef(glm3)[1] + coef(glm3)[5]) / (coef(glm3)[2] + coef(glm3)[21]))
+predicted_L50.73p <- -((coef(glm3)[1] + coef(glm3)[6]) / (coef(glm3)[2] + coef(glm3)[22]))
+predicted_L50.76p <- -((coef(glm3)[1] + coef(glm3)[7]) / (coef(glm3)[2] + coef(glm3)[23]))
+predicted_L50.77p <- -((coef(glm3)[1] + coef(glm3)[8]) / (coef(glm3)[2] + coef(glm3)[24]))
+predicted_L50.78p <- -((coef(glm3)[1] + coef(glm3)[9]) / (coef(glm3)[2] + coef(glm3)[25]))
+predicted_L50.79p <- -((coef(glm3)[1] + coef(glm3)[10]) / (coef(glm3)[2] + coef(glm3)[26]))
+predicted_L50.81p <- -((coef(glm3)[1] + coef(glm3)[11]) / (coef(glm3)[2] + coef(glm3)[27]))
+predicted_L50.90p <- -((coef(glm3)[1] + coef(glm3)[12]) / (coef(glm3)[2] + coef(glm3)[28]))
+predicted_L50.91p <- -((coef(glm3)[1] + coef(glm3)[13]) / (coef(glm3)[2] + coef(glm3)[29]))
+predicted_L50.09p <- -((coef(glm3)[1] + coef(glm3)[14]) / (coef(glm3)[2] + coef(glm3)[30]))
+predicted_L50.13p <- -((coef(glm3)[1] + coef(glm3)[15]) / (coef(glm3)[2] + coef(glm3)[31]))
+predicted_L50.14p <- -((coef(glm3)[1] + coef(glm3)[16]) / (coef(glm3)[2] + coef(glm3)[32]))
+predicted_L50.15p <- -((coef(glm3)[1] + coef(glm3)[17]) / (coef(glm3)[2] + coef(glm3)[33]))
+predicted_L50.23p <- -((coef(glm3)[1] + coef(glm3)[18]) / (coef(glm3)[2] + coef(glm3)[34]))
 
 ```
 
 ```{r}
 
-year <- c("1951", "1966", "1967", "1968", "1973", "1976", "1977", "1978", "1979", "1981", "1990", "1991", "2009", "2013", "2014", "2015")
-predicted_values <- c(predicted_L50.51p, predicted_L50.66p, predicted_L50.67p, predicted_L50.68p, predicted_L50.73p, predicted_L50.76p, predicted_L50.77p, predicted_L50.78p, predicted_L50.79p, predicted_L50.81p, predicted_L50.90p, predicted_L50.91p, predicted_L50.09p, predicted_L50.13p, predicted_L50.14p, predicted_L50.15p)
+year <- c("1951", "1966", "1967", "1968", "1973", "1976", "1977", "1978", "1979", "1981", "1990", "1991", "2009", "2013", "2014", "2015", "2023")
+predicted_values <- c(predicted_L50.51p, predicted_L50.66p, predicted_L50.67p, predicted_L50.68p, predicted_L50.73p, predicted_L50.76p, predicted_L50.77p, predicted_L50.78p, predicted_L50.79p, predicted_L50.81p, predicted_L50.90p, predicted_L50.91p, predicted_L50.09p, predicted_L50.13p, predicted_L50.14p, predicted_L50.15p, predicted_L50.23p)
 
-lower_ci <- c(ci.L50.51p[1], ci.L50.66p[1], ci.L50.67p[1], ci.L50.68p[1], ci.L50.73p[1], ci.L50.76p[1], ci.L50.77p[1], ci.L50.78p[1], ci.L50.79p[1], ci.L50.81p[1], ci.L50.90p[1], ci.L50.91p[1], ci.L50.09p[1], ci.L50.13p[1], ci.L50.14p[1], ci.L50.15p[1])
+lower_ci <- c(ci.L50.51p[1], ci.L50.66p[1], ci.L50.67p[1], ci.L50.68p[1], ci.L50.73p[1], ci.L50.76p[1], ci.L50.77p[1], ci.L50.78p[1], ci.L50.79p[1], ci.L50.81p[1], ci.L50.90p[1], ci.L50.91p[1], ci.L50.09p[1], ci.L50.13p[1], ci.L50.14p[1], ci.L50.15p[1], ci.L50.23p[1])
 
-upper_ci <- c(ci.L50.51p[2], ci.L50.66p[2], ci.L50.67p[2], ci.L50.68p[2], ci.L50.73p[2], ci.L50.76p[2], ci.L50.77p[2], ci.L50.78p[2], ci.L50.79p[2], ci.L50.81p[2], ci.L50.90p[2], ci.L50.91p[2], ci.L50.09p[2], ci.L50.13p[2], ci.L50.14p[2], ci.L50.15p[2])
+upper_ci <- c(ci.L50.51p[2], ci.L50.66p[2], ci.L50.67p[2], ci.L50.68p[2], ci.L50.73p[2], ci.L50.76p[2], ci.L50.77p[2], ci.L50.78p[2], ci.L50.79p[2], ci.L50.81p[2], ci.L50.90p[2], ci.L50.91p[2], ci.L50.09p[2], ci.L50.13p[2], ci.L50.14p[2], ci.L50.15p[2], ci.L50.23p[2])
 
 perchMatSize <- data.frame(year, predicted_values, lower_ci, upper_ci)
 
@@ -1000,7 +1003,7 @@ base_plot <- plot_model(wt_gaus1, type = "pred",
            show.legend = FALSE, dot.size = 1.5)
 
 # Significant negative relationship
-p_value <- 0.009
+p_value <- 0.011
 # Extract the plot data from plot_model
 plot_data <- base_plot$data
 # Combine plot data with perchMat for matching
@@ -1033,9 +1036,10 @@ Y1990 <- runif(100, min=perchMat[10,3], max=perchMat[10,4])
 Y1991 <- runif(100, min=perchMat[11,3], max=perchMat[11,4])
 Y2014 <- runif(100, min=perchMat[12,3], max=perchMat[12,4])
 Y2015 <- runif(100, min=perchMat[13,3], max=perchMat[13,4])
+Y2023 <- runif(100, min=perchMat[14,3], max=perchMat[14,4])
 
 # Combine the vectors into a data frame
-data <- data.frame(Y1951, Y1966, Y1967, Y1968, Y1976, Y1977, Y1978, Y1979, Y1981, Y1990, Y1991, Y2014, Y2015)
+data <- data.frame(Y1951, Y1966, Y1967, Y1968, Y1976, Y1977, Y1978, Y1979, Y1981, Y1990, Y1991, Y2014, Y2015, Y2023)
 
 # Reshape data from wide to long format
 data_long <- reshape2::melt(data, variable.name = "year", value.name = "predicted_values")
