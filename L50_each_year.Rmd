@@ -1012,7 +1012,9 @@ combined_data <- merge(plot_data, perchMat, by.x = "x", by.y = "year")
 p <- base_plot +
   geom_errorbar(data = combined_data, aes(x = x, ymin = lower_ci, ymax = upper_ci), width = 0.3, size = 0.5, color = "black", alpha = 0.6) +
   annotate("text", x = Inf, y = Inf, label = paste0("p = ", format(p_value, digits = 4)), 
-           hjust = 1.2, vjust = 2, size = 5) + expand_limits(y = 0) +
+           hjust = 1.2, vjust = 2, size = 5) +
+  scale_x_continuous(breaks = c(1960, 1980, 2000, 2020)) +
+  expand_limits(y = 0) +
   My_theme
 
 # Print the final plot
@@ -1133,8 +1135,9 @@ lmp <- ggplot(combined_sampled_data, aes(x = year, y = predicted_values.x, group
   scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black"), guide = FALSE) +
   geom_point(alpha = 0.1) +
   labs(title = "Perch", x = "Year", y = "Predicted L50") +
-annotate("text", x = max(combined_sampled_data$year), y = min(combined_sampled_data$predicted_values.x), label = paste0("p < ", significance_level, " in ", significant_p_values, "%"), hjust = 1, vjust = -16.5, size = 5, color = "black") + expand_limits(y = 0) +
-   My_theme
+annotate("text", x = max(combined_sampled_data$year), y = min(combined_sampled_data$predicted_values.x), label = paste0("p < ", significance_level, " in ", significant_p_values, "%"), hjust = 1, vjust = -16.5, size = 5, color = "black") +
+scale_x_continuous(breaks = c(1960, 1980, 2000, 2020)) +
+expand_limits(y = 0) + My_theme
 ```
 
 
@@ -1361,7 +1364,7 @@ summary(wt_gaus1)
 # year         -0.4678     0.1237  -3.783  0.00359 **
 
 # negative relationship
-p_value <- 0.004
+p_value <- 0.003
 # Plot model
 base_plot <- plot_model(wt_gaus1, type = "pred", 
            terms = c("year"),
