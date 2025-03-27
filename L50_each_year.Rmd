@@ -1364,7 +1364,7 @@ summary(wt_gaus1)
 # year         -0.4678     0.1237  -3.783  0.00359 **
 
 # negative relationship
-p_value <- 0.003
+p_value <- 0.004
 # Plot model
 base_plot <- plot_model(wt_gaus1, type = "pred", 
            terms = c("year"),
