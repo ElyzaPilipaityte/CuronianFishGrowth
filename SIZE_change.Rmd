@@ -1213,6 +1213,7 @@ print(vbFitPlot1)
 roach <- sizedata %>% filter (spp_name_lt=="Kuoja")
 ```
 
+
 ```{r}
 vb <- vbFuns(param="Typical")     ## Typical VBGF
 grps <- unique(roach$periods)          ## Names of groups
@@ -1602,12 +1603,20 @@ grid.arrange(combined_plot,
 
 ```
 
-
 ```{r}
-ggsave("vonB.tiff", plot = combined_plot, units = "mm", 
-       width = 300, height = 250, dpi = 600, compression = 'lzw')
+# Full plot with axis labels
+full_plot <- grid.arrange(
+  combined_plot,
+  bottom = textGrob("Age (years)", gp = gpar(fontsize = 16)),
+  left = textGrob("Standard length (cm)", rot = 90, gp = gpar(fontsize = 16))
+)
 
+# Save using ggsave via a temporary file device
+tiff("vonB.tiff", units = "mm", width = 300, height = 250, res = 600, compression = "lzw")
+grid.draw(full_plot)
+dev.off()
 ```
+
 
 ###################
 # weight at age
