@@ -1172,7 +1172,7 @@ vbFitPlot1 <- ggplot() +
   geom_line(data=filter(preds, inrng), aes(x=age, y=fit, color=periods), linewidth=1) +
   scale_y_continuous(name="Total Length (mm)", limits=c(0, 60)) +
   scale_x_continuous(name="Age (years)", breaks=0:20) +
-  scale_color_manual(values=c('black', 'red'), aesthetics=c("color", "fill")) +
+  scale_color_manual(values=c('#000000', '#93003a'), aesthetics=c("color", "fill")) +
   scale_y_continuous(name=element_blank(), limits=c(0, 70), expand=c(0, 0)) +
   scale_x_continuous(name=element_blank(), expand=c(0, 0), limits=c(0, 20), breaks=seq(5, 15, 5)) +
   theme_bw() +
@@ -1190,7 +1190,7 @@ vbFitPlot1 <- ggplot() +
                         " (SE ± ", round(params_list[[1]]["Linf", "Std. Error"], 2), ")\n",
                         "K = ", round(params_list[[1]]["K", "Estimate"], 2), 
                         " (SE ± ", round(params_list[[1]]["K", "Std. Error"], 2), ")"), 
-           color='black', size=5, hjust=0) +
+           color='#000000', size=5, hjust=0) +
 
   # Add annotations for Linf and K for the second periods with standard errors
   annotate("text", x=1, y=55, 
@@ -1199,7 +1199,7 @@ vbFitPlot1 <- ggplot() +
                         " (SE ± ", round(params_list[[2]]["Linf", "Std. Error"], 2), ")\n",
                         "K = ", round(params_list[[2]]["K", "Estimate"], 2), 
                         " (SE ± ", round(params_list[[2]]["K", "Std. Error"], 2), ")"), 
-           color='red', size=5, hjust=0)
+           color='#93003a', size=5, hjust=0)
 
 # Print the plot
 print(vbFitPlot1)
@@ -1293,7 +1293,7 @@ vbFitPlot2 <- ggplot() +
   geom_line(data=filter(preds, inrng), aes(x=age, y=fit, color=periods), linewidth=1) +
   scale_y_continuous(name="Total Length (mm)", limits=c(0, 60)) +
   scale_x_continuous(name="Age (years)", breaks=0:20) +
-  scale_color_manual(values=c('black', 'red'), aesthetics=c("color", "fill")) +
+  scale_color_manual(values=c('black', '#93003a'), aesthetics=c("color", "fill")) +
   scale_y_continuous(name=element_blank(), limits=c(0, 70), expand=c(0, 0)) +
   scale_x_continuous(name=element_blank(), expand=c(0, 0), limits=c(0, 20), breaks=seq(5, 15, 5)) +
   theme_bw() +
@@ -1320,7 +1320,7 @@ vbFitPlot2 <- ggplot() +
                         " (SE ± ", round(params_list[[2]]["Linf", "Std. Error"], 2), ")\n",
                         "K = ", round(params_list[[2]]["K", "Estimate"], 2), 
                         " (SE ± ", round(params_list[[2]]["K", "Std. Error"], 2), ")"), 
-           color='red', size=5, hjust=0)
+           color='#93003a', size=5, hjust=0)
 
 # Print the plot
 print(vbFitPlot2)
@@ -1412,7 +1412,7 @@ vbFitPlot3 <- ggplot() +
   geom_line(data=filter(preds, inrng), aes(x=age, y=fit, color=periods), linewidth=1) +
   scale_y_continuous(name="Total Length (mm)", limits=c(0, 60)) +
   scale_x_continuous(name="Age (years)", breaks=0:20) +
-  scale_color_manual(values=c('black', 'red'), aesthetics=c("color", "fill")) +
+  scale_color_manual(values=c('black', '#93003a'), aesthetics=c("color", "fill")) +
   scale_y_continuous(name=element_blank(), limits=c(0, 70), expand=c(0, 0)) +
   scale_x_continuous(name=element_blank(), expand=c(0, 0), limits=c(0, 20), breaks=seq(5, 15, 5)) +
   theme_bw() +
@@ -1439,7 +1439,7 @@ vbFitPlot3 <- ggplot() +
                         " (SE ± ", round(params_list[[2]]["Linf", "Std. Error"], 2), ")\n",
                         "K = ", round(params_list[[2]]["K", "Estimate"], 2), 
                         " (SE ± ", round(params_list[[2]]["K", "Std. Error"], 2), ")"), 
-           color='red', size=5, hjust=0)
+           color='#93003a', size=5, hjust=0)
 
 # Print the plot
 print(vbFitPlot3)
@@ -1531,7 +1531,7 @@ vbFitPlot4 <- ggplot() +
   geom_line(data=filter(preds, inrng), aes(x=age, y=fit, color=periods), linewidth=1) +
   scale_y_continuous(name="Total Length (mm)", limits=c(0, 60)) +
   scale_x_continuous(name="Age (years)", breaks=0:20) +
-  scale_color_manual(values=c('black', 'red'), aesthetics=c("color", "fill")) +
+  scale_color_manual(values=c('black', '#93003a'), aesthetics=c("color", "fill")) +
   scale_y_continuous(name=element_blank(), limits=c(0, 70), expand=c(0, 0)) +
   scale_x_continuous(name=element_blank(), expand=c(0, 0), limits=c(0, 20), breaks=seq(5, 15, 5)) +
   theme_bw() +
@@ -1558,7 +1558,7 @@ vbFitPlot4 <- ggplot() +
                         " (SE ± ", round(params_list[[2]]["Linf", "Std. Error"], 2), ")\n",
                         "K = ", round(params_list[[2]]["K", "Estimate"], 2), 
                         " (SE ± ", round(params_list[[2]]["K", "Std. Error"], 2), ")"), 
-           color='red', size=5, hjust=0)
+           color='#93003a', size=5, hjust=0)
 
 # Print the plot
 print(vbFitPlot4)
