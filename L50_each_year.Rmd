@@ -439,7 +439,7 @@ combined_sampled_data <- combined_sampled_data %>%
 lmb <- ggplot(combined_sampled_data, aes(x = year, y = predicted_values.x, group = simulation)) +
   geom_ribbon(aes(ymin = lower_ci, ymax = upper_ci), alpha = 0.6, fill = "#ececec") +
  geom_line(aes(y = predicted, color = p_value < 0.05), alpha = 0.3) +
-  scale_color_manual(values = c("TRUE" = "#D55E00", "FALSE" = "#000000"), guide = FALSE) +
+  scale_color_manual(values = c("TRUE" = "#93003a", "FALSE" = "#000000"), guide = FALSE) +
   geom_point(alpha = 0.1) +
   labs(title = "Bream", x = "Year", y = "Predicted L50") +
   scale_x_continuous(breaks = c(1960, 1980, 2000)) +
@@ -777,7 +777,7 @@ combined_sampled_data <- combined_sampled_data %>%
 lmr <- ggplot(combined_sampled_data, aes(x = year, y = predicted_values.x, group = simulation)) +
   geom_ribbon(aes(ymin = lower_ci, ymax = upper_ci), alpha = 0.6, fill = "#ececec") +
  geom_line(aes(y = predicted, color = p_value < 0.05), alpha = 0.3) +
-  scale_color_manual(values = c("TRUE" = "#D55e00", "FALSE" = "#000000"), guide = FALSE) +
+  scale_color_manual(values = c("TRUE" = "#93003a", "FALSE" = "#000000"), guide = FALSE) +
   geom_point(alpha = 0.1) +
   labs(title = "Roach", x = "Year", y = "Predicted L50") + 
 annotate("text", x = max(combined_sampled_data$year), y = min(combined_sampled_data$predicted_values.x), label = paste0("p < ", significance_level, " in ", significant_p_values, "%"), hjust = 1, vjust = -16.5, size = 5, color = "black") + expand_limits(y = 0) + My_theme
@@ -1132,7 +1132,7 @@ combined_sampled_data <- combined_sampled_data %>%
 lmp <- ggplot(combined_sampled_data, aes(x = year, y = predicted_values.x, group = simulation)) +
   geom_ribbon(aes(ymin = lower_ci, ymax = upper_ci), alpha = 0.6, fill = "#ececec") +
  geom_line(aes(y = predicted, color = p_value < 0.05), alpha = 0.3) +
-  scale_color_manual(values = c("TRUE" = "#d55E00", "FALSE" = "#000000"), guide = FALSE) +
+  scale_color_manual(values = c("TRUE" = "#93003a", "FALSE" = "#000000"), guide = FALSE) +
   geom_point(alpha = 0.1) +
   labs(title = "Perch", x = "Year", y = "Predicted L50") +
 annotate("text", x = max(combined_sampled_data$year), y = min(combined_sampled_data$predicted_values.x), label = paste0("p < ", significance_level, " in ", significant_p_values, "%"), hjust = 1, vjust = -16.5, size = 5, color = "black") +
@@ -1502,7 +1502,7 @@ combined_sampled_data <- combined_sampled_data %>%
 lmpp <- ggplot(combined_sampled_data, aes(x = year, y = predicted_values.x, group = simulation)) +
   geom_ribbon(aes(ymin = lower_ci, ymax = upper_ci), alpha = 0.6, fill = "#ececec") +
  geom_line(aes(y = predicted, color = p_value < 0.05), alpha = 0.3) +
-  scale_color_manual(values = c("TRUE" = "#D55E00", "FALSE" = "#000000"), guide = FALSE) +
+  scale_color_manual(values = c("TRUE" = "#93003a", "FALSE" = "#000000"), guide = FALSE) +
   geom_point(alpha = 0.1) +
   labs(title = "Pikeperch", x = "Year", y = "Predicted L50") + 
   scale_x_continuous(breaks = c(1960, 1980, 2000)) +
