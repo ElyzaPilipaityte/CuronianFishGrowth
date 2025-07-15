@@ -991,7 +991,7 @@ background_plot <- ggdraw() +
 
 # Save the combined plot with more white space around it
 # ggsave("fig5.tiff", plot = background_plot, units = "mm", 
-       width = 300, height = 250, dpi = 300, compression = 'lzw')
+#       width = 300, height = 250, dpi = 300, compression = 'lzw')
 ```
 
 
