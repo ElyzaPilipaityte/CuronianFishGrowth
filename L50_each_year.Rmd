@@ -40,7 +40,7 @@ My_theme <- theme(
   panel.background = element_blank(),
   panel.border = element_rect(fill = NA, linewidth = 1),
   strip.background = element_rect(fill = "white", color = "white", linewidth = 1),
-  text = element_text(size = 20, family = "gillsans"),
+  text = element_text(size = 30, family = "gillsans"),
   panel.grid.major = element_blank(),  # Remove major grid lines
   panel.grid.minor = element_blank()   # Remove minor grid lines
 )
@@ -3183,3 +3183,94 @@ background_plot <- ggdraw() +
 ggsave("fig4_sensitivity.tiff", plot = background_plot, units = "mm", 
        width = 300, height = 250, dpi = 300, compression = 'lzw')
 ```
+
+## Graphical abstract
+
+```{r}
+
+df <- data.frame(
+  Year = rep(seq(1950, 2020, by = 14), 4),
+  Size = c(seq(55, 45, length.out = 6),   # Adult - Pop A
+           seq(40, 30, length.out = 6),   # Juvenile - Pop A
+           seq(35, 15, length.out = 6),   # Adult - Pop B
+           seq(30, 13, length.out = 6)),  # Juvenile - Pop B
+  Group = rep(c("Adult - Pop A", "Juvenile - Pop A", "Adult - Pop B", "Juvenile - Pop B"), each = 6)
+)
+
+plot1 <- ggplot(df, aes(x = Year, y = Size, color = Group)) +
+  geom_line(size = 1.5) +
+  theme_minimal(base_size = 14) +
+  labs(
+    title = "",
+    y = "Maturity Size (L50)",
+    x = "1950                                    2020",
+    color = "Group"
+  ) +
+  scale_color_manual(values = c("#999933", "#6699CC", "#661100", "#44AA99")) +
+  My_theme  +
+  theme(legend.position = "none",
+        axis.text = element_blank())
+
+ 
+
+```
+
+
+```{r}
+library(ggimage)
+library(grid)
+
+# Create vector of ages
+age <- seq(0, 10, by = 0.1)
+
+# von Bertalanffy growth: Lt = Linf * (1 - exp(-k * (t - t0)))
+size_cool   <- 60 * (1 - exp(-0.3 * (age - 0)))
+size_warm   <- 45 * (1 - exp(-0.4 * (age - 0)))
+size_warm1  <- 50 * (1 - exp(-0.7 * (age - 0)))  # growth shifted 1 year
+
+# Combine into single data frame with 3 groups
+df <- data.frame(
+  Age = rep(age, 3),
+  Size = c(size_cool, size_warm, size_warm1),
+  Temp = rep(c("Cool", "Warm", "Warm (delayed)"), each = length(age))
+)
+
+plot2 <- ggplot(df, aes(x = Age, y = Size, color = Temp, linetype = Temp)) +
+  geom_line(size = 1.5) +
+  scale_color_manual(values = c("Cool" = "#0072B2", 
+                                "Warm" = "red", 
+                                "Warm (delayed)" = "red")) +
+  scale_linetype_manual(values = c("Cool" = "solid", 
+                                   "Warm" = "dashed", 
+                                   "Warm (delayed)" = "dashed")) +
+  labs(x = "Age", y = "Size", title = " ") +
+  theme_minimal(base_size = 16) +
+  theme(
+    legend.position = "none",
+    plot.title = element_text(size = 22, face = "bold"),
+    axis.title.x = element_text(size = 18),
+    axis.title.y = element_text(size = 18)
+  ) +
+  annotate("text", x = 6.5, y = 29, label = "variable growth\nresponses to warming\namong species", size = 10) +
+  My_theme +
+theme(
+  legend.position = "none",
+  plot.title = element_text(size = 22, face = "bold"),
+  axis.title.x = element_text(size = 30),
+  axis.title.y = element_text(size = 30),
+  axis.text = element_blank()
+)
+
+```
+
+```{r}
+library(gridExtra)
+
+# Side by side
+graphic <- grid.arrange(plot1, plot2, ncol = 2)
+
+# Save the combined plot with more white space around it
+ggsave("picture.tiff", plot = graphic, units = "mm", 
+       width = 400, height = 180, dpi = 300, compression = 'lzw')
+```
+
