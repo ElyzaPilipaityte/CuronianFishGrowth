@@ -3224,9 +3224,14 @@ library(grid)
 age <- seq(0, 10, by = 0.1)
 
 # von Bertalanffy growth: Lt = Linf * (1 - exp(-k * (t - t0)))
-size_cool   <- 60 * (1 - exp(-0.3 * (age - 0)))
-size_warm   <- 45 * (1 - exp(-0.4 * (age - 0)))
-size_warm1  <- 50 * (1 - exp(-0.7 * (age - 0)))  # growth shifted 1 year
+bream_cool   <- 60 * (1 - exp(-0.3 * (age - 0)))
+bream_warm   <- 54 * (1 - exp(-0.4 * (age - 0)))
+roach_cold<- 49 * (1 - exp(-0.7 * (age - 0)))
+roach_warm  <- 34 * (1 - exp(-0.7 * (age - 0))) 
+perch_cold  <- 44 * (1 - exp(-0.7 * (age - 0))) 
+perch_warm  <- 27 * (1 - exp(-0.7 * (age - 0))) 
+sander_cold  <- 70 * (1 - exp(-0.7 * (age - 0))) 
+sander_warm <- 140 * (1 - exp(-0.7 * (age - 0))) 
 
 # Combine into single data frame with 3 groups
 df <- data.frame(
@@ -3262,6 +3267,48 @@ theme(
 )
 
 ```
+
+```{r}
+library(ggplot2)
+
+# Define age range
+age <- seq(0, 10, by = 0.1)
+
+# Generate data for all species and temperature scenarios
+growth_data <- data.frame(
+  Age = rep(age, times = 8),
+  Size = c(
+    60 * (1 - exp(-0.3 * age)),    # Bream cool
+    54 * (1 - exp(-0.4 * age)),    # Bream warm
+    49 * (1 - exp(-0.7 * age)),    # Roach cool
+    34 * (1 - exp(-0.7 * age)),    # Roach warm
+    44 * (1 - exp(-0.7 * age)),    # Perch cool
+    27 * (1 - exp(-0.7 * age)),    # Perch warm
+    70 * (1 - exp(-0.7 * age)),    # Sander cool
+    140 * (1 - exp(-0.7 * age))    # Sander warm
+  ),
+  Species = rep(rep(c("Bream", "Roach", "Perch", "Sander"), each = length(age)), times = 2),
+  Temp = rep(c("Cool", "Warm"), each = length(age) * 4)
+)
+
+# Plot all curves together
+ggplot(growth_data, aes(x = Age, y = Size, color = Species, linetype = Temp)) +
+  geom_line(size = 1.4) +
+  labs(x = "Age (years)", y = "Length (mm)", title = "Growth Curves by Species and Temperature") +
+  scale_linetype_manual(values = c("Cool" = "solid", "Warm" = "dashed")) +
+  scale_color_brewer(palette = "Dark2") +  # Or pick custom colors
+  theme_minimal(base_size = 16) +
+  theme(
+    legend.title = element_blank(),
+    legend.text = element_text(size = 14),
+    axis.title = element_text(size = 18),
+    plot.title = element_text(size = 20, face = "bold"),
+    legend.position = "right"
+  ) + coord_cartesian(ylim = c(0, 75))
+
+
+```
+
 
 ```{r}
 library(gridExtra)
