@@ -3264,6 +3264,34 @@ plot2 <- ggplot(growth_data, aes(x = Age, y = Size, color = Species, linetype = 
   guides(color = "none", linetype = "none") +
   My_theme
 
+
+plot2 <- ggplot(growth_data, aes(x = Age, y = Size, color = Species, linetype = Temp)) +
+  geom_line(size = 1.4) +
+  labs(x = "Age (years)", y = "Length", title = NULL) +
+  scale_color_manual(values = c("Bream" = "#661100", "Roach" = "#6699CC", "Perch" = "#44AA99", "Sander" = "#999933")) +
+  scale_linetype_manual(
+    values = c("Cool" = "solid", "Warm" = "dashed"),
+    labels = c("Cool" = "Colder period", "Warm" = "Warmer period")
+  ) +
+  theme_minimal(base_size = 16) +
+  theme(
+    legend.title = element_blank(),  # keep this blank, or set name in scale_* if you want a title
+    legend.text = element_text(size = 27),
+    axis.title = element_text(size = 30),
+    plot.title = element_blank(),
+    axis.text = element_blank(),
+    axis.ticks = element_blank(),
+    legend.background = element_rect(fill = alpha("white", 0.7), color = NA),
+    legend.key = element_blank(),
+    legend.position = c(0.95, 0.05),
+    legend.justification = c(1, 0),
+    legend.key.width = unit(1.5, "cm")
+  ) +
+  coord_cartesian(ylim = c(0, 75)) + 
+  guides(color = "none") +
+  My_theme
+
+
 ```
 
 ```{r}
