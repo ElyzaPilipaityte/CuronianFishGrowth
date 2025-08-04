@@ -3201,7 +3201,6 @@ plot1 <- ggplot(df, aes(x = Year, y = Size, color = Group)) +
   geom_line(size = 1.5) +
   theme_minimal(base_size = 14) +
   labs(
-    title = "",
     y = "Maturity Size (L50)",
     x = "1950                                    2020",
     color = "Group"
@@ -3217,107 +3216,64 @@ plot1 <- ggplot(df, aes(x = Year, y = Size, color = Group)) +
 
 
 ```{r}
-library(ggimage)
-library(grid)
-
-# Create vector of ages
-age <- seq(0, 10, by = 0.1)
-
-# von Bertalanffy growth: Lt = Linf * (1 - exp(-k * (t - t0)))
-bream_cool   <- 60 * (1 - exp(-0.3 * (age - 0)))
-bream_warm   <- 54 * (1 - exp(-0.4 * (age - 0)))
-roach_cold<- 49 * (1 - exp(-0.7 * (age - 0)))
-roach_warm  <- 34 * (1 - exp(-0.7 * (age - 0))) 
-perch_cold  <- 44 * (1 - exp(-0.7 * (age - 0))) 
-perch_warm  <- 27 * (1 - exp(-0.7 * (age - 0))) 
-sander_cold  <- 70 * (1 - exp(-0.7 * (age - 0))) 
-sander_warm <- 140 * (1 - exp(-0.7 * (age - 0))) 
-
-# Combine into single data frame with 3 groups
-df <- data.frame(
-  Age = rep(age, 3),
-  Size = c(size_cool, size_warm, size_warm1),
-  Temp = rep(c("Cool", "Warm", "Warm (delayed)"), each = length(age))
-)
-
-plot2 <- ggplot(df, aes(x = Age, y = Size, color = Temp, linetype = Temp)) +
-  geom_line(size = 1.5) +
-  scale_color_manual(values = c("Cool" = "#0072B2", 
-                                "Warm" = "red", 
-                                "Warm (delayed)" = "red")) +
-  scale_linetype_manual(values = c("Cool" = "solid", 
-                                   "Warm" = "dashed", 
-                                   "Warm (delayed)" = "dashed")) +
-  labs(x = "Age", y = "Size", title = " ") +
-  theme_minimal(base_size = 16) +
-  theme(
-    legend.position = "none",
-    plot.title = element_text(size = 22, face = "bold"),
-    axis.title.x = element_text(size = 18),
-    axis.title.y = element_text(size = 18)
-  ) +
-  annotate("text", x = 6.5, y = 29, label = "variable growth\nresponses to warming\namong species", size = 10) +
-  My_theme +
-theme(
-  legend.position = "none",
-  plot.title = element_text(size = 22, face = "bold"),
-  axis.title.x = element_text(size = 30),
-  axis.title.y = element_text(size = 30),
-  axis.text = element_blank()
-)
-
-```
-
-```{r}
 library(ggplot2)
+library(dplyr)
 
 # Define age range
 age <- seq(0, 10, by = 0.1)
 
-# Generate data for all species and temperature scenarios
-growth_data <- data.frame(
-  Age = rep(age, times = 8),
-  Size = c(
-    60 * (1 - exp(-0.3 * age)),    # Bream cool
-    54 * (1 - exp(-0.4 * age)),    # Bream warm
-    49 * (1 - exp(-0.7 * age)),    # Roach cool
-    34 * (1 - exp(-0.7 * age)),    # Roach warm
-    44 * (1 - exp(-0.7 * age)),    # Perch cool
-    27 * (1 - exp(-0.7 * age)),    # Perch warm
-    70 * (1 - exp(-0.7 * age)),    # Sander cool
-    140 * (1 - exp(-0.7 * age))    # Sander warm
-  ),
-  Species = rep(rep(c("Bream", "Roach", "Perch", "Sander"), each = length(age)), times = 2),
-  Temp = rep(c("Cool", "Warm"), each = length(age) * 4)
+# Define growth parameters for each Species × Temp
+params <- data.frame(
+  Species = rep(c("Bream", "Roach", "Perch", "Sander"), each = 2),
+  Temp = rep(c("Cool", "Warm"), times = 4),
+  Linf = c(60, 54, 49, 45, 44, 27, 70, 140),
+  k = c(0.3, 0.4, 0.3, 0.4, 0.3, 0.9, 0.4, 0.2),
+  L0 = c(7, 7, 4, 4, 0, 0, 10, 10)
 )
 
-# Plot all curves together
-ggplot(growth_data, aes(x = Age, y = Size, color = Species, linetype = Temp)) +
+growth_data <- params %>%
+  rowwise() %>%
+  do({
+    data.frame(
+      Age = age,
+      Size = .$L0 + (.$Linf - .$L0) * (1 - exp(-.$k * age)),
+      Species = .$Species,
+      Temp = .$Temp
+    )
+  }) %>%
+  bind_rows()
+
+plot2 <- ggplot(growth_data, aes(x = Age, y = Size, color = Species, linetype = Temp)) +
   geom_line(size = 1.4) +
-  labs(x = "Age (years)", y = "Length (mm)", title = "Growth Curves by Species and Temperature") +
+  labs(x = "Age (years)", y = "Length", title = NULL) +
+  scale_color_manual(values = c("Bream" = "#661100", "Roach" = "#6699CC", "Perch" = "#44AA99", "Sander" = "#999933")) +
   scale_linetype_manual(values = c("Cool" = "solid", "Warm" = "dashed")) +
-  scale_color_brewer(palette = "Dark2") +  # Or pick custom colors
   theme_minimal(base_size = 16) +
   theme(
     legend.title = element_blank(),
-    legend.text = element_text(size = 14),
-    axis.title = element_text(size = 18),
-    plot.title = element_text(size = 20, face = "bold"),
-    legend.position = "right"
-  ) + coord_cartesian(ylim = c(0, 75))
-
+    legend.text = element_text(size = 30),
+    axis.title = element_text(size = 30),
+    plot.title = element_blank(),
+    axis.text = element_blank(),
+    axis.ticks = element_blank(),
+    legend.background = element_rect(fill = alpha("white", 0.7), color = NA),
+    legend.key = element_blank()
+  ) +
+  coord_cartesian(ylim = c(0, 75)) + 
+  annotate("text", x = 6.5, y = 13, label = "variable growth responses \nto warming among species", size = 9) +
+  guides(color = "none", linetype = "none") +
+  My_theme
 
 ```
 
-
 ```{r}
-library(gridExtra)
+library(cowplot)
 
-# Side by side
-graphic <- grid.arrange(plot1, plot2, ncol = 2)
+graph <- plot_grid(plot1, plot2, ncol = 2, align = 'v') 
 
-# Save the combined plot with more white space around it
-ggsave("picture.tiff", plot = graphic, units = "mm", 
-       width = 400, height = 180, dpi = 300, compression = 'lzw')
+ggsave("grap_abs.tiff", plot = graph, units = "mm", 
+       width = 400, height = 200, dpi = 300, compression = 'lzw')
+
+
 ```
 
