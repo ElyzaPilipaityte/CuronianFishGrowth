@@ -3202,15 +3202,18 @@ plot1 <- ggplot(df, aes(x = Year, y = Size, color = Group)) +
   theme_minimal(base_size = 14) +
   labs(
     y = "Maturity Size (L50)",
-    x = "1950                                    2020",
-    color = "Group"
+    x = "1950                                                                               2020",
+    color = "Group",
+    caption = "Fish species illustrations \u00A9 Amy Rose Coghlan"
   ) +
   scale_color_manual(values = c("#999933", "#6699CC", "#661100", "#44AA99")) +
   My_theme  +
   theme(legend.position = "none",
-        axis.text = element_blank())
+        axis.text = element_blank(),
+        plot.caption = element_text(size = 22, hjust = 1, color = "gray0"))
 
- 
+ ggsave("grap_abs1.tiff", plot = plot1, units = "mm", 
+       width = 350, height = 230, dpi = 300, compression = 'lzw')
 
 ```
 
@@ -3289,7 +3292,7 @@ plot2 <- ggplot(growth_data, aes(x = Age, y = Size, color = Species, linetype = 
   ) +
   coord_cartesian(ylim = c(0, 75)) + 
   guides(color = "none") +
-  My_theme
+  My_theme 
 
 
 ```
